@@ -1,0 +1,88 @@
+{
+  "issues": [
+    {
+      "title": "Damaged Road and Active Pothole",
+      "description": "Reported issue of category pothole located at Thendral Avenue, Basthi, Hosur, Krishnagiri, Tamil Nadu, 635109, India. Immediate inspection and remediation are requested.",
+      "category": "pothole",
+      "severity": 7,
+      "urgencyLevel": "high",
+      "estimatedResolutionDays": 5,
+      "recommendedAuthority": "Municipal Corporation Road Maintenance Dept",
+      "complaintLetter": "To,\nThe Executive Engineer,\nMunicipal Corporation Road Maintenance Dept,\nThendral Avenue, Basthi, Hosur, Krishnagiri, Tamil Nadu, 635109, India\n\nSubject: Urgent Complaint Regarding Damaged Road and Active Pothole at Thendral Avenue, Basthi, Hosur, Krishnagiri, Tamil Nadu, 635109, India\n\nRespected Sir/Madam,\n\nI am writing to bring to your attention a pressing civic issue: \"Damaged Road and Active Pothole\" located near Thendral Avenue, Basthi, Hosur, Krishnagiri, Tamil Nadu, 635109, India. \n\nThis issue represents a significant concern for residents in this area. Specifically, it has caused severe damage to vehicles and poses a major accident risk for two-wheelers.\n\nWe kindly request your department to inspect this site and arrange for the resolution of this issue on a priority basis. We estimate this should require approximately 5 days of standard repair work.\n\nThank you for your attention to this community matter.\n\nSincerely,\n[Your Name]\n[Contact Details]\nDate: [Date]",
+      "isDuplicate": false,
+      "similarIssues": [],
+      "location": {
+        "address": "Thendral Avenue, Basthi, Hosur, Krishnagiri, Tamil Nadu, 635109, India",
+        "latitude": 12.742375999999998,
+        "longitude": 77.844833
+      },
+      "imageUrl": "/uploads/1782564730928-j8e2xbdg.jpeg",
+      "visionTags": [
+        "Infrastructure",
+        "Urban area",
+        "Damage",
+        "Waste",
+        "Litter",
+        "Concrete",
+        "Asphalt",
+        "Plastic bag",
+        "Road surface"
+      ],
+      "status": "Reported",
+      "upvotes": 1,
+      "upvotedBy": [
+        "google-khk3trg"
+      ],
+      "verifications": 0,
+      "verifiedBy": [],
+      "commentsCount": 0,
+      "reporter": {
+        "uid": "google-khk3trg",
+        "displayName": "Jane Doe",
+        "photoURL": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150"
+      },
+      "history": [
+        {
+          "status": "Reported",
+          "timestamp": "2026-06-27T12:52:10.931Z",
+          "note": "Issue reported by citizen."
+        },
+        {
+          "status": "Reported",
+          "timestamp": "2026-06-27T12:52:23.845Z",
+          "note": "Report finalized and confirmed by citizen."
+        }
+      ],
+      "createdAt": "2026-06-27T12:52:10.931Z",
+      "updatedAt": "2026-06-27T12:55:31.860Z",
+      "id": "t4ew1684nqm"
+    }
+  ],
+  "users": [
+    {
+      "uid": "google-1fzmtc4",
+      "displayName": "Jane Doe",
+      "username": "srijaisuryaa",
+      "photoURL": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150",
+      "points": 0,
+      "badges": [],
+      "createdAt": "2026-06-27T09:55:15.569Z",
+      "updatedAt": "2026-06-27T09:55:15.569Z",
+      "id": "google-1fzmtc4"
+    },
+    {
+      "uid": "google-khk3trg",
+      "displayName": "Jane Doe",
+      "username": "jaisuryaa",
+      "photoURL": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150",
+      "points": 10,
+      "badges": [
+        "First Reporter"
+      ],
+      "createdAt": "2026-06-27T10:42:00.175Z",
+      "updatedAt": "2026-06-27T12:52:10.934Z",
+      "id": "google-khk3trg"
+    }
+  ],
+  "comments": []
+}

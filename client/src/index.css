@@ -1,0 +1,127 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    background-color: #F9F8F4;
+    color: #2D3A31;
+    font-family: 'Source Sans 3', sans-serif;
+  }
+  
+  body {
+    background-color: #F9F8F4;
+    color: #2D3A31;
+    min-height: 100vh;
+    @apply antialiased;
+  }
+
+  body ::selection {
+    background-color: #8C9A84;
+    color: #FFFFFF;
+  }
+
+  /* Headings defaults */
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Playfair Display', Georgia, serif;
+    color: #2D3A31;
+  }
+
+  /* Body defaults */
+  p {
+    font-family: 'Source Sans 3', sans-serif;
+    color: #2D3A31;
+  }
+}
+
+/* Custom Scrollbar Styles */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background-color: #F9F8F4;
+}
+::-webkit-scrollbar-thumb {
+  background-color: #8C9A84;
+  border-radius: 9999px;
+}
+
+/* Roman Arch shape for images */
+.arch-image {
+  border-radius: 160px 160px 0px 0px !important;
+}
+
+/* Organic fluid blob shape */
+.blob-image {
+  border-radius: 60% 40% 30% 70% / 60% 30% 70% 40% !important;
+}
+
+/* Fluid luxury transitions */
+.transition-botanical {
+  transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Editorial drop cap style */
+.drop-cap::first-letter {
+  font-family: 'Playfair Display', serif;
+  font-size: 4.5rem;
+  font-weight: 700;
+  font-style: italic;
+  float: left;
+  line-height: 0.85;
+  margin-top: 0.1em;
+  margin-right: 0.15em;
+  color: #C27B66; /* Terracotta */
+}
+
+/* Soft shadows */
+.soft-card-shadow {
+  box-shadow: 0 10px 30px -10px rgba(45, 58, 49, 0.08);
+}
+.soft-card-shadow-hover {
+  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.soft-card-shadow-hover:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 45px -12px rgba(45, 58, 49, 0.15);
+}
+
+/* Leaf badge stamping style */
+.leaf-badge {
+  background-color: #DCCFC2;
+  color: #2D3A31;
+  font-family: 'Source Sans 3', sans-serif;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 0.7rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 9999px !important; /* Pill style */
+}
+
+/* Custom Leaflet Map Popup Styling (Editorial / Flawless) */
+.leaflet-popup-content-wrapper {
+  background-color: #F9F8F6 !important; /* Warm Alabaster */
+  color: #1A1A1A !important;             /* Charcoal */
+  border-radius: 0px !important;          /* Sharp editorial bounds */
+  border: 1px solid #1A1A1A !important;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.06) !important;
+  padding: 0 !important;
+}
+
+.leaflet-popup-content {
+  margin: 12px 16px !important;
+  font-family: 'Source Sans 3', sans-serif;
+}
+
+.leaflet-popup-tip {
+  background-color: #F9F8F6 !important;
+  border: 1px solid #1A1A1A !important;
+  border-radius: 0px !important;
+}
+
+.leaflet-custom-popup .leaflet-popup-close-button {
+  color: #1A1A1A !important;
+  padding: 8px 8px 0 0 !important;
+}

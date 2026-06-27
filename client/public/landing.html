@@ -1,0 +1,2074 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CivicPulse — The Art of Hyperlocal Resolution</title>
+  
+  <!-- Fonts: Playfair Display & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;700;950&family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+  
+  <style>
+    /* ----------------------------------------------------
+       DESIGN TOKENS & SYSTEM (Luxury / Editorial)
+    ---------------------------------------------------- */
+    :root {
+      --bg: #F9F8F6;          /* Warm Alabaster */
+      --foreground: #1A1A1A;  /* Rich Charcoal */
+      --bg-muted: #EBE5DE;    /* Pale Taupe */
+      --fg-muted: #6C6863;    /* Warm Grey */
+      --accent: #D4AF37;      /* Metallic Gold */
+      --accent-fg: #FFFFFF;
+      --font-serif: 'Playfair Display', Georgia, serif;
+      --font-sans: 'Inter', sans-serif;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      border-radius: 0px !important; /* Strictly rectangular */
+    }
+
+    html {
+      scroll-behavior: auto; /* Handled by Lenis */
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--foreground);
+      font-family: var(--font-sans);
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* Selection styling */
+    body ::selection {
+      background-color: var(--accent);
+      color: var(--accent-fg);
+    }
+
+    /* 160fps rendering configurations */
+    .gsap-animated {
+      will-change: transform, opacity;
+      transform: translateZ(0);
+      backface-visibility: hidden;
+    }
+
+    /* Custom smooth cursor (Editorial precision) */
+    .cursor {
+      width: 6px;
+      height: 6px;
+      background: var(--foreground);
+      position: fixed;
+      pointer-events: none;
+      z-index: 9999;
+      transform: translate(-50%, -50%);
+    }
+
+    .cursor-follower {
+      width: 30px;
+      height: 30px;
+      border: 1px solid var(--foreground);
+      position: fixed;
+      pointer-events: none;
+      z-index: 9998;
+      transform: translate(-50%, -50%);
+      transition: width 0.3s, height 0.3s, border-color 0.3s;
+    }
+
+    /* Paper Noise Overlay (Tactile Texture) */
+    .paper-noise {
+      position: fixed;
+      top: 0; left: 0; width: 100vw; height: 100vh;
+      z-index: 50;
+      pointer-events: none;
+      opacity: 0.02;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    }
+
+    /* Visible Editorial Gridlines */
+    .gridline-container {
+      position: fixed;
+      top: 0; left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 1600px;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 5;
+      display: flex;
+      justify-content: space-between;
+      padding: 0 64px;
+    }
+
+    .gridline {
+      width: 1px;
+      height: 100%;
+      background: rgba(26, 26, 26, 0.05);
+    }
+
+    /* Canvas background players for scroll storytelling */
+    .sequence-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: 0.25;
+      filter: grayscale(1);
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    /* Vertical Text Labels (Signature Element) */
+    .vertical-label {
+      position: absolute;
+      writing-mode: vertical-rl;
+      text-transform: uppercase;
+      font-size: 10px;
+      letter-spacing: 0.3em;
+      color: var(--fg-muted);
+      z-index: 10;
+      font-family: var(--font-sans);
+      font-weight: 500;
+    }
+
+    /* Grayscale Image Treatment with Cinematic Reveal */
+    .grayscale-image {
+      filter: grayscale(1);
+      transition: filter 1.8s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 1.8s cubic-bezier(0.25, 0.46, 0.45, 0.94), box-shadow 1.8s ease;
+      will-change: filter, transform;
+    }
+
+    .grayscale-image:hover {
+      filter: grayscale(0);
+      transform: scale(1.03);
+    }
+
+    /* Navbar styling */
+    header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      padding: 24px 64px;
+      z-index: 100;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(249, 248, 246, 0.85);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(26, 26, 26, 0.08);
+    }
+
+    .logo {
+      font-family: var(--font-serif);
+      font-weight: 700;
+      font-size: 24px;
+      letter-spacing: -0.5px;
+      color: var(--foreground);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo span {
+      font-style: italic;
+      font-weight: 400;
+      color: var(--accent);
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 40px;
+      align-items: center;
+    }
+
+    .nav-links a {
+      color: var(--fg-muted);
+      text-decoration: none;
+      font-size: 11px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.2em;
+      transition: color 0.5s;
+    }
+
+    .nav-links a:hover {
+      color: var(--foreground);
+    }
+
+    /* Buttons (Editorial Sharp Rectangles) */
+    .btn-primary {
+      position: relative;
+      background: var(--foreground);
+      color: var(--accent-fg);
+      border: none;
+      padding: 16px 36px;
+      font-weight: 500;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.25em;
+      cursor: pointer;
+      overflow: hidden;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+      z-index: 1;
+      height: 48px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+      transition: box-shadow 0.5s ease;
+    }
+
+    .btn-primary::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: var(--accent);
+      z-index: -1;
+      transform: translateX(-100%);
+      transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+
+    .btn-primary:hover {
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+    }
+
+    .btn-primary:hover::before {
+      transform: translateX(0);
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--foreground);
+      border: 1px solid rgba(26, 26, 26, 0.2);
+      padding: 16px 36px;
+      font-weight: 500;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.25em;
+      cursor: pointer;
+      text-decoration: none;
+      height: 48px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.5s, border-color 0.5s, color 0.5s;
+    }
+
+    .btn-ghost:hover {
+      background: var(--foreground);
+      border-color: var(--foreground);
+      color: var(--bg);
+    }
+
+    /* Viewport Sections */
+    section {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+      padding: 120px 64px;
+    }
+
+    /* SECTION 1: HERO */
+    #hero {
+      flex-direction: column;
+      text-align: center;
+    }
+
+    #particle-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 2;
+      pointer-events: none;
+      opacity: 0.85;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 10;
+      max-width: 1000px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: transparent;
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      padding: 6px 18px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.25em;
+      margin-bottom: 36px;
+    }
+
+    .hero-content h1 {
+      font-family: var(--font-serif);
+      font-size: 96px;
+      font-weight: 400;
+      line-height: 0.95;
+      letter-spacing: -2px;
+      margin-bottom: 40px;
+      color: var(--foreground);
+    }
+
+    .hero-content h1 .word-wrapper {
+      display: inline-block;
+      overflow: hidden;
+      vertical-align: bottom;
+    }
+
+    .hero-content h1 .word {
+      display: inline-block;
+      will-change: transform;
+    }
+
+    .hero-content h1 em {
+      font-family: var(--font-serif);
+      font-style: italic;
+      color: var(--accent);
+      font-weight: 400;
+    }
+
+    /* Decorative Line before hero p */
+    .editorial-divider {
+      width: 48px;
+      height: 1px;
+      background: var(--foreground);
+      margin: 0 auto 30px auto;
+    }
+
+    .hero-content p {
+      font-size: 18px;
+      color: var(--fg-muted);
+      margin-bottom: 48px;
+      font-weight: 400;
+      max-width: 550px;
+      margin-left: auto;
+      margin-right: auto;
+      line-height: 1.625;
+    }
+
+    .cta-group {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+    }
+
+    .scroll-hint {
+      position: absolute;
+      bottom: 40px;
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--fg-muted);
+      animation: bounce 2s infinite;
+      z-index: 10;
+    }
+
+    /* SECTION 2: PROBLEM (Inverted Cinematic Dark) */
+    #problem {
+      background: var(--foreground);
+      color: var(--bg);
+      flex-direction: column;
+      text-align: center;
+    }
+
+    #problem h2 {
+      font-family: var(--font-serif);
+      font-size: 56px;
+      font-weight: 400;
+      margin-bottom: 80px;
+      letter-spacing: -1.5px;
+      z-index: 10;
+    }
+
+    .pain-cards {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 40px;
+      max-width: 1200px;
+      width: 100%;
+      z-index: 10;
+      margin-bottom: 80px;
+    }
+
+    @media (min-width: 768px) {
+      .pain-cards {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    .pain-card {
+      background: transparent;
+      border: none;
+      border-top: 1px solid rgba(249, 248, 246, 0.15); /* Top border only */
+      padding: 60px 40px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 24px;
+      font-size: 16px;
+      font-weight: 400;
+      color: var(--bg-muted);
+      transition: border-color 0.6s, background 0.6s;
+    }
+
+    .pain-card span {
+      font-size: 44px;
+      filter: grayscale(1);
+      transition: filter 0.6s;
+    }
+
+    .pain-card:hover {
+      border-top-color: var(--accent);
+      background: rgba(249, 248, 246, 0.02);
+      color: var(--bg);
+    }
+
+    .pain-card:hover span {
+      filter: grayscale(0);
+    }
+
+    .big-statement {
+      font-family: var(--font-serif);
+      font-size: 96px;
+      font-weight: 450;
+      letter-spacing: -3px;
+      margin-top: 40px;
+      z-index: 10;
+      display: flex;
+      justify-content: center;
+      gap: 2px;
+    }
+
+    .big-statement em {
+      font-style: italic;
+      color: var(--accent);
+    }
+
+    /* SECTION 3: PRODUCT REVEAL */
+    #reveal {
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      gap: 80px;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+    }
+
+    @media (min-width: 1024px) {
+      #reveal {
+        flex-direction: row;
+        justify-content: space-around;
+        padding: 0 120px;
+      }
+    }
+
+    /* Editorial phone mockup - sharp rectangular bounds */
+    .phone-mockup {
+      width: 320px;
+      height: 640px;
+      border: 1px solid var(--foreground);
+      position: relative;
+      background: var(--bg);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.08);
+      overflow: hidden;
+      flex-shrink: 0;
+      z-index: 10;
+      will-change: transform;
+    }
+
+    .phone-screen {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .screen {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 40px 32px;
+      text-align: center;
+      opacity: 0;
+      transition: opacity 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      background: var(--bg);
+    }
+
+    .screen.active {
+      opacity: 1;
+      z-index: 5;
+    }
+
+    .screen .emoji {
+      font-size: 80px;
+      margin-bottom: 30px;
+    }
+
+    .screen h4 {
+      font-family: var(--font-serif);
+      font-size: 24px;
+      font-weight: 400;
+      margin-bottom: 16px;
+      color: var(--foreground);
+    }
+
+    .screen p {
+      font-size: 14px;
+      color: var(--fg-muted);
+      line-height: 1.625;
+    }
+
+    .feature-steps {
+      display: flex;
+      flex-direction: column;
+      gap: 56px;
+      max-width: 550px;
+      z-index: 10;
+    }
+
+    .step {
+      opacity: 0.25;
+      transform: scale(0.97);
+      transition: opacity 0.5s, transform 0.5s;
+      border-top: 1px solid rgba(26, 26, 26, 0.1);
+      padding-top: 24px;
+    }
+
+    .step.active {
+      opacity: 1;
+      transform: scale(1.02);
+      border-top-color: var(--accent);
+    }
+
+    .step-num {
+      font-family: monospace;
+      font-size: 12px;
+      color: var(--accent);
+      font-weight: 700;
+      display: block;
+      margin-bottom: 12px;
+      letter-spacing: 0.15em;
+    }
+
+    .step h3 {
+      font-family: var(--font-serif);
+      font-size: 32px;
+      font-weight: 400;
+      margin-bottom: 16px;
+      color: var(--foreground);
+    }
+
+    .step p {
+      font-size: 16px;
+      color: var(--fg-muted);
+      line-height: 1.625;
+    }
+
+    /* SECTION 4: AI SHOWCASE */
+    #ai-showcase {
+      padding: 0;
+      background: var(--bg-2);
+      width: 100%;
+    }
+
+    .h-scroll-container {
+      overflow: hidden;
+      width: 100%;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+    }
+
+    .h-track {
+      display: flex;
+      gap: 60px;
+      padding: 0 20vw;
+      will-change: transform;
+    }
+
+    .ai-card {
+      width: 440px;
+      height: 540px;
+      background: transparent;
+      border-top: 1px solid var(--foreground); /* Define by line */
+      padding: 60px 48px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      position: relative;
+      overflow: hidden;
+      flex-shrink: 0;
+      transition: border-top-color 0.5s, background 0.5s, box-shadow 0.5s;
+      transform-style: preserve-3d;
+      perspective: 1000px;
+      will-change: transform;
+    }
+
+    .ai-card:hover {
+      border-top-color: var(--accent);
+      background: rgba(26, 26, 26, 0.01);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.02);
+    }
+
+    .ai-icon {
+      font-size: 56px;
+      position: absolute;
+      top: 60px;
+      left: 48px;
+      filter: grayscale(1);
+    }
+
+    .ai-card h3 {
+      font-family: var(--font-serif);
+      font-size: 32px;
+      font-weight: 400;
+      margin-bottom: 20px;
+      color: var(--foreground);
+    }
+
+    .ai-card p {
+      font-size: 15px;
+      color: var(--fg-muted);
+      line-height: 1.625;
+      margin-bottom: 32px;
+    }
+
+    .tech-tag {
+      display: inline-block;
+      align-self: flex-start;
+      font-family: monospace;
+      font-size: 11px;
+      color: var(--foreground);
+      border: 1px solid rgba(26, 26, 26, 0.15);
+      padding: 8px 16px;
+      min-height: 33px;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+    }
+
+    /* SECTION 5: LIVE MAP (Botanical Browser Mockup) */
+    #map-section {
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 60px;
+    }
+
+    @media (min-width: 1024px) {
+      #map-section {
+        flex-direction: row;
+        justify-content: space-around;
+        padding: 0 120px;
+      }
+    }
+
+    .map-container {
+      width: 100%;
+      max-width: 680px;
+      height: 500px;
+      border: 1px solid var(--foreground);
+      position: relative;
+      overflow: hidden;
+      background: var(--bg);
+      flex-shrink: 0;
+      z-index: 10;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.05);
+    }
+
+    .browser-chrome {
+      background: var(--bg-muted);
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-bottom: 1px solid rgba(26, 26, 26, 0.1);
+      z-index: 15;
+      position: relative;
+    }
+
+    .browser-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50% !important;
+    }
+
+    .browser-dot.red { background: rgba(26,26,26,0.3); }
+    .browser-dot.yellow { background: rgba(26,26,26,0.2); }
+    .browser-dot.green { background: rgba(26,26,26,0.1); }
+
+    .browser-address {
+      flex: 1;
+      background: var(--bg);
+      border: 1px solid rgba(26, 26, 26, 0.08);
+      font-size: 10px;
+      font-family: monospace;
+      color: var(--fg-muted);
+      padding: 4px 12px;
+      text-align: center;
+      max-width: 340px;
+      margin: 0 auto;
+      letter-spacing: 0.1em;
+    }
+
+    .mock-app-body {
+      height: calc(100% - 45px);
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      background: #F9F8F4; /* App paper theme */
+      color: #2D3A31;
+    }
+
+    .mock-navbar {
+      height: 48px;
+      background: #F9F8F4;
+      border-bottom: 1px solid #e5e5db;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 20px;
+    }
+
+    .mock-logo {
+      font-family: var(--font-serif);
+      font-weight: 700;
+      font-size: 16px;
+      color: #2D3A31;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .mock-logo span {
+      font-style: italic;
+      font-weight: 400;
+      color: #8C9A84;
+    }
+
+    .mock-badge {
+      font-size: 10px;
+      font-family: monospace;
+      border: 1px solid #8C9A84;
+      color: #8C9A84;
+      padding: 3px 12px;
+      font-weight: bold;
+    }
+
+    .mock-stats-bar {
+      background: #F9F8F4;
+      border-bottom: 1px solid #e5e5db;
+      padding: 8px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: monospace;
+      font-size: 10px;
+      color: #737365;
+    }
+
+    .mock-map-area {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      background: #f1f0ea;
+    }
+
+    .mock-filters {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      z-index: 10;
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      max-width: 90%;
+    }
+
+    .mock-chip {
+      background: #F9F8F4;
+      border: 1px solid #DCCFC2;
+      color: #2D3A31;
+      padding: 4px 12px;
+      font-size: 10px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: monospace;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 10px rgba(45, 58, 49, 0.05);
+    }
+
+    .mock-chip.active, .mock-chip:hover {
+      background: #2D3A31;
+      color: #F9F8F4;
+      border-color: #2D3A31;
+    }
+
+    .map-bg {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      transform: scale(1.02);
+      will-change: transform;
+    }
+
+    .map-overlay {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at center, transparent 30%, var(--bg) 95%);
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .heatmap-overlay {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 50% 50%, rgba(212, 175, 55, 0.15) 0%, transparent 60%);
+      pointer-events: none;
+      z-index: 1;
+      opacity: 0;
+      will-change: opacity;
+    }
+
+    .pin {
+      position: absolute;
+      font-size: 28px;
+      transform: translate(-50%, -100%);
+      z-index: 3;
+      cursor: pointer;
+      transition: transform 0.2s;
+      will-change: transform, opacity;
+    }
+
+    .pin:hover {
+      transform: translate(-50%, -100%) scale(1.3);
+    }
+
+    .map-text {
+      max-width: 520px;
+      z-index: 10;
+    }
+
+    .map-text h2 {
+      font-family: var(--font-serif);
+      font-size: 56px;
+      font-weight: 400;
+      line-height: 1.05;
+      letter-spacing: -2px;
+      margin-bottom: 40px;
+    }
+
+    .filter-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .chip {
+      background: transparent;
+      border: 1px solid rgba(26, 26, 26, 0.15);
+      color: var(--fg-muted);
+      padding: 10px 24px;
+      font-size: 11px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      cursor: pointer;
+      transition: background 0.4s, border-color 0.4s, color 0.4s, transform 0.2s;
+      will-change: transform, opacity;
+    }
+
+    .chip.active, .chip:hover {
+      background: var(--foreground);
+      border-color: var(--foreground);
+      color: var(--bg);
+      transform: translateY(-2px);
+    }
+
+    /* SECTION 6: STATS COUNTER */
+    #stats {
+      background: var(--foreground);
+      color: var(--bg);
+      flex-direction: column;
+    }
+
+    .stats-bg-text {
+      position: absolute;
+      font-family: var(--font-serif);
+      font-size: 22vw;
+      font-weight: 700;
+      color: rgba(249, 248, 246, 0.015);
+      letter-spacing: -8px;
+      pointer-events: none;
+      user-select: none;
+      z-index: 1;
+      will-change: transform;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 60px;
+      max-width: 1200px;
+      width: 100%;
+      z-index: 2;
+    }
+
+    @media (min-width: 768px) {
+      .stats-grid {
+        grid-template-columns: repeat(4, 1fr);
+      }
+    }
+
+    .stat-item {
+      text-align: center;
+      perspective: 1000px;
+      border-top: 1px solid rgba(249, 248, 246, 0.1);
+      padding-top: 40px;
+      will-change: transform;
+    }
+
+    .stat-inner {
+      will-change: transform;
+      transform-style: preserve-3d;
+    }
+
+    .counter {
+      font-family: var(--font-serif);
+      font-size: 80px;
+      font-weight: 400;
+      color: var(--accent);
+      letter-spacing: -2px;
+    }
+
+    .unit {
+      font-family: var(--font-serif);
+      font-size: 40px;
+      font-weight: 400;
+      color: var(--accent);
+    }
+
+    .stat-item p {
+      font-size: 11px;
+      color: var(--bg-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.2em;
+      font-weight: 500;
+      margin-top: 16px;
+    }
+
+    /* SECTION 7: GAMIFICATION */
+    #gamification {
+      background: var(--bg);
+      flex-direction: column;
+      text-align: center;
+      position: relative;
+    }
+
+    #gamification h2 {
+      font-family: var(--font-serif);
+      font-size: 56px;
+      font-weight: 400;
+      margin-bottom: 50px;
+      letter-spacing: -2px;
+      z-index: 10;
+    }
+
+    .leaderboard {
+      width: 100%;
+      max-width: 700px;
+      background: transparent;
+      border-top: 1px solid var(--foreground);
+      margin-bottom: 60px;
+      z-index: 10;
+    }
+
+    .lb-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 24px 32px;
+      border-bottom: 1px solid rgba(26, 26, 26, 0.08);
+      font-size: 15px;
+      font-weight: 400;
+      color: var(--foreground);
+      position: relative;
+      overflow: hidden;
+      will-change: transform, opacity;
+    }
+
+    .lb-row::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: -150%;
+      width: 50%;
+      height: 100%;
+      background: linear-gradient(to right, transparent, rgba(26, 26, 26, 0.03), transparent);
+      transform: skewX(-25deg);
+      transition: 0.75s;
+    }
+
+    .lb-row:hover::after {
+      left: 150%;
+    }
+
+    .lb-row.rank-1 {
+      color: var(--accent);
+      background: rgba(212, 175, 55, 0.02);
+      border-bottom-color: rgba(212, 175, 55, 0.2);
+    }
+
+    .badges-showcase {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 24px;
+      justify-content: center;
+      z-index: 10;
+    }
+
+    .badge-item {
+      background: transparent;
+      border: 1px solid rgba(26, 26, 26, 0.15);
+      padding: 16px 32px;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--foreground);
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      will-change: transform, opacity;
+    }
+
+    /* SECTION 8: TECH CREDIBILITY */
+    #tech {
+      background: var(--bg);
+      border-top: 1px solid rgba(26, 26, 26, 0.08);
+      flex-direction: column;
+      text-align: center;
+    }
+
+    .eyebrow {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.3em;
+      color: var(--fg-muted);
+      margin-bottom: 60px;
+      font-weight: 500;
+    }
+
+    .logo-row {
+      display: flex;
+      gap: 80px;
+      justify-content: center;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 50px;
+    }
+
+    .tech-logo {
+      font-family: var(--font-serif);
+      font-size: 28px;
+      font-weight: 400;
+      color: var(--fg-muted);
+      opacity: 0.65;
+      transition: opacity 0.5s, transform 0.5s;
+      will-change: transform, opacity;
+    }
+
+    .tech-logo:hover {
+      opacity: 1;
+      transform: scale(1.02);
+      color: var(--foreground);
+    }
+
+    .divider-line {
+      width: 80%;
+      max-width: 1200px;
+      height: 1px;
+      background: rgba(26, 26, 26, 0.1);
+      margin-top: 50px;
+      transform: scaleX(0);
+      transform-origin: left center;
+      will-change: transform;
+    }
+
+    /* SECTION 9: FINAL CTA */
+    #cta {
+      background: var(--bg);
+      flex-direction: column;
+      text-align: center;
+      border-top: 1px solid rgba(26, 26, 26, 0.08);
+    }
+
+    #cta h2 {
+      font-family: var(--font-serif);
+      font-size: 80px;
+      font-weight: 400;
+      line-height: 1.05;
+      letter-spacing: -2px;
+      margin-bottom: 40px;
+    }
+
+    #cta h2 .highlight {
+      font-family: var(--font-serif);
+      font-style: italic;
+      color: var(--accent);
+    }
+
+    #cta p {
+      font-size: 18px;
+      color: var(--fg-muted);
+      margin-bottom: 48px;
+      line-height: 1.625;
+    }
+
+    .cta-buttons {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      z-index: 10;
+    }
+
+    .btn-magnetic {
+      display: inline-block;
+      will-change: transform;
+    }
+
+    /* Keyframe Animations */
+    @keyframes bounce {
+      0%, 20%, 50%, 80%, 100% {
+        transform: translateY(0);
+      }
+      40% {
+        transform: translateY(-10px);
+      }
+      60% {
+        transform: translateY(-5px);
+      }
+    }
+  </style>
+
+  <!-- CDN scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/@studio-freight/lenis@1.0.42/dist/lenis.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+</head>
+<body>
+
+  <!-- Smooth custom cursor targets -->
+  <div class="cursor"></div>
+  <div class="cursor-follower"></div>
+
+  <!-- Tactile Paper Grain Overlay -->
+  <div class="paper-noise"></div>
+
+  <!-- Viewport Vertical Gridlines -->
+  <div class="gridline-container">
+    <div class="gridline"></div>
+    <div class="gridline"></div>
+    <div class="gridline"></div>
+    <div class="gridline"></div>
+  </div>
+
+  <!-- Header Navigation -->
+  <header>
+    <a href="/app" class="logo">
+      <svg style="color: var(--foreground); width: 22px; height: 22px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+      <span>Civic</span>Pulse
+    </a>
+    <div class="nav-links">
+      <a href="#problem">The Problem</a>
+      <a href="#reveal">App Reveal</a>
+      <a href="#ai-showcase">AI Pipeline</a>
+      <a href="#map-section">Live Map</a>
+      <a href="#stats">Impact</a>
+      <a href="/app" class="btn-nav">Launch App</a>
+    </div>
+  </header>
+
+  <!-- SECTION 1: HERO -->
+  <section id="hero">
+    <!-- Sequence Canvas 1 (ezgif-49be3fbe3c7bbdf5-jpg) -->
+    <canvas id="video-canvas-1" class="sequence-canvas"></canvas>
+    <canvas id="particle-canvas"></canvas>  <!-- floating city particles -->
+
+    <!-- Vertical Side Label -->
+    <div class="vertical-label" style="top: 20%; left: 64px; height: 200px;">CivicPulse / Vol. 01</div>
+    
+    <div class="hero-content">
+      <div class="badge">🔴 LIVE · 47 issues reported today</div>
+      <h1>
+        <span class="word-wrapper"><span class="word">Your <em>City.</em></span></span><br>
+        <span class="word-wrapper"><span class="word">Your <em>Voice.</em></span></span><br>
+        <span class="word-wrapper"><span class="word">Powered by <em>AI.</em></span></span>
+      </h1>
+      <div class="editorial-divider"></div>
+      <p>Report civic issues in 10 seconds. Auto-detect addresses, estimate severity, and automatically draft official filings.</p>
+      <div class="cta-group">
+        <a href="/app" class="btn-primary">Report an Issue</a>
+        <a href="#reveal" class="btn-ghost">Watch Demo ▶</a>
+      </div>
+    </div>
+    <div class="scroll-hint">scroll to explore ↓</div>
+  </section>
+
+  <!-- SECTION 2: PROBLEM -->
+  <section id="problem">
+    <!-- Sequence Canvas 2 (ezgif-4c8d36d4007d0c53-jpg) -->
+    <canvas id="video-canvas-2" class="sequence-canvas"></canvas>
+    
+    <h2 class="reveal-text">The system is broken.</h2>
+    <div class="pain-cards">
+      <div class="pain-card">
+        <span>📵</span>
+        WhatsApp groups go silent
+      </div>
+      <div class="pain-card">
+        <span>📞</span>
+        Municipality lines stay busy
+      </div>
+      <div class="pain-card">
+        <span>📋</span>
+        Your complaint disappears
+      </div>
+    </div>
+    <p class="big-statement" id="statement-rebuilt">We <em>rebuilt</em> it.</p>
+  </section>
+
+  <!-- SECTION 3: PRODUCT REVEAL -->
+  <section id="reveal">
+    <!-- Sequence Canvas 3 (ezgif-4f63929d779bcd89-jpg) -->
+    <canvas id="video-canvas-3" class="sequence-canvas"></canvas>
+
+    <div class="phone-mockup">
+      <div class="phone-screen">
+        <div class="screen s1 active">
+          <div class="emoji">📸</div>
+          <h4>Camera View</h4>
+          <p>Detecting pothole severity and dimensions in real time.</p>
+        </div>
+        <div class="screen s2">
+          <div class="emoji">🤖</div>
+          <h4>AI Analyzing</h4>
+          <p>"Severity 8/10: High-risk structural defect detected."</p>
+        </div>
+        <div class="screen s3">
+          <div class="emoji">📍</div>
+          <h4>Auto Tag Location</h4>
+          <p>Coordinates auto-geolocated on the live interactive map.</p>
+        </div>
+        <div class="screen s4">
+          <div class="emoji">✅</div>
+          <h4>Submitted!</h4>
+          <p>Report filed with municipality. +10 citizen points earned!</p>
+        </div>
+      </div>
+    </div>
+    
+    <div class="feature-steps">
+      <div class="step active" data-step="1">
+        <span class="step-num">01</span>
+        <h3>Snap the Problem</h3>
+        <p>Point your camera. Google Vision AI identifies the issue type and extracts image features instantly.</p>
+      </div>
+      <div class="step" data-step="2">
+        <span class="step-num">02</span>
+        <h3>AI Severity Classification</h3>
+        <p>Gemini LLM processes visual inputs to index severity and auto-draft municipal alerts.</p>
+      </div>
+      <div class="step" data-step="3">
+        <span class="step-num">03</span>
+        <h3>Auto Tag Location</h3>
+        <p>Reverse-geocoding grabs address nodes to tag issues automatically without manual input.</p>
+      </div>
+      <div class="step" data-step="4">
+        <span class="step-num">04</span>
+        <h3>Automatic Filing Letter</h3>
+        <p>Generates legal documents to submit to municipal agencies automatically and awards gamification XP.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 4: AI SHOWCASE -->
+  <section id="ai-showcase">
+    <div class="h-scroll-container">
+      <div class="h-track">
+        <div class="ai-card card-1">
+          <div class="ai-icon">🔍</div>
+          <h3>Vision Detection</h3>
+          <p>Google Cloud Vision identifies issue type from photo uploads.</p>
+          <div class="tech-tag" data-text="Google Vision API"></div>
+        </div>
+        <div class="ai-card card-2">
+          <div class="ai-icon">🤖</div>
+          <h3>Gemini Analysis</h3>
+          <p>Urgency scoring, structural severity evaluation, and auto-categorization.</p>
+          <div class="tech-tag" data-text="Gemini 1.5 Flash"></div>
+        </div>
+        <div class="ai-card card-3">
+          <div class="ai-icon">📝</div>
+          <h3>Auto Letter</h3>
+          <p>Auto-drafts legal correspondence to send to municipal departments.</p>
+          <div class="tech-tag" data-text="Gemini LLM"></div>
+        </div>
+        <div class="ai-card card-4">
+          <div class="ai-icon">🔮</div>
+          <h3>Duplicate Check</h3>
+          <p>Clustering algorithm flags repeated submissions in a 2km zone.</p>
+          <div class="tech-tag" data-text="Google Maps API"></div>
+        </div>
+        <div class="ai-card card-5">
+          <div class="ai-icon">🏆</div>
+          <h3>Gamification Engine</h3>
+          <p>Secure leaderboard tracking and citizen badge awards.</p>
+          <div class="tech-tag" data-text="Firebase Core"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 5: LIVE MAP -->
+  <section id="map-section">
+    <div class="map-container">
+      <div class="browser-chrome">
+        <div class="browser-dot red"></div>
+        <div class="browser-dot yellow"></div>
+        <div class="browser-dot green"></div>
+        <div class="browser-address">https://civicpulse.org/app</div>
+      </div>
+      
+      <div class="mock-app-body">
+        <div class="mock-navbar">
+          <div class="mock-logo">
+            <svg style="color: #8C9A84; width: 16px; height: 16px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+            Civic<span>Pulse</span>
+          </div>
+          <div class="mock-badge">🏆 2,840 XP</div>
+        </div>
+        
+        <div class="mock-stats-bar">
+          <div>🟢 LIVE STATUS</div>
+          <div>RESOLVED: 9 · HELPED: 12 · WARDS: 3</div>
+        </div>
+        
+        <div class="mock-map-area">
+          <div class="map-bg">
+            <div class="map-overlay"></div>
+            <div class="heatmap-overlay"></div>
+            
+            <!-- OSM styled static capture background -->
+            <div style="width: 100%; height: 100%; background: #F5F4EC; position: relative;">
+              <!-- Botanical grid lines -->
+              <div style="position: absolute; width: 1px; height: 100%; background: rgba(45,58,49,0.06); left: 30%;"></div>
+              <div style="position: absolute; width: 1px; height: 100%; background: rgba(45,58,49,0.06); left: 70%;"></div>
+              <div style="position: absolute; height: 1px; width: 100%; background: rgba(45,58,49,0.06); top: 40%;"></div>
+              <div style="position: absolute; height: 1px; width: 100%; background: rgba(45,58,49,0.06); top: 80%;"></div>
+            </div>
+
+            <!-- Interactive filters inside mock app -->
+            <div class="mock-filters">
+              <span class="mock-chip active" data-category="all">🍃 All</span>
+              <span class="mock-chip" data-category="pothole">🚧 Potholes</span>
+              <span class="mock-chip" data-category="water">💧 Leaks</span>
+              <span class="mock-chip" data-category="streetlight">💡 Lights</span>
+            </div>
+
+            <!-- Animated pins -->
+            <div class="pin" data-category="pothole" style="top:25%; left:45%">🔴</div>
+            <div class="pin" data-category="pothole" style="top:55%; left:25%">🕳️</div>
+            <div class="pin" data-category="water" style="top:42%; left:75%">💧</div>
+            <div class="pin" data-category="streetlight" style="top:68%; left:62%">💡</div>
+            <div class="pin" data-category="pothole" style="top:32%; left:28%">🕳️</div>
+            <div class="pin" data-category="pothole" style="top:75%; left:40%">🔴</div>
+            <div class="pin" data-category="streetlight" style="top:20%; left:72%">💡</div>
+            <div class="pin" data-category="water" style="top:50%; left:85%">💧</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="map-text">
+      <h2>Every issue.<br>On the map.<br>In real time.</h2>
+      <p style="color: var(--gray-light); margin-bottom: 30px; line-height: 1.6;">Pins automatically drop onto maps. Duplicate checks automatically identify coordinates match within a 2km radius to focus community support.</p>
+      <div class="filter-chips">
+        <span class="chip active" data-category="all">All</span>
+        <span class="chip" data-category="pothole">🕳️ Pothole</span>
+        <span class="chip" data-category="water">💧 Water</span>
+        <span class="chip" data-category="streetlight">💡 Streetlight</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 6: STATS COUNTER -->
+  <section id="stats">
+    <div class="stats-bg-text">IMPACT</div>
+    <div class="stats-grid">
+      <div class="stat-item">
+        <div class="stat-inner">
+          <span class="counter" data-target="2400">0</span>
+          <span class="unit">+</span>
+          <p>Issues Resolved</p>
+        </div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-inner">
+          <span class="counter" data-target="18">0</span>
+          <p>Cities Live</p>
+        </div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-inner">
+          <span class="counter" data-target="94">0</span>
+          <span class="unit">%</span>
+          <p>Resolution Rate</p>
+        </div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-inner">
+          <span class="counter" data-target="12">0</span>
+          <span class="unit">min</span>
+          <p>Avg Response Time</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 7: GAMIFICATION -->
+  <section id="gamification">
+    <h2>Make impact.<br>Earn your rank.</h2>
+    <div class="leaderboard">
+      <div class="lb-row rank-1">🏆 Arjun K. · 2,840 pts · Local Legend</div>
+      <div class="lb-row rank-2">🥈 Priya M. · 1,920 pts · Super Verifier</div>
+      <div class="lb-row rank-3">🥉 Rahul S. · 1,340 pts · Active Citizen</div>
+    </div>
+    <div class="badges-showcase">
+      <div class="badge-item">🏅 First Reporter</div>
+      <div class="badge-item">🔍 Verified 10</div>
+      <div class="badge-item">🏆 Local Legend</div>
+      <div class="badge-item">🔥 7-Day Streak</div>
+    </div>
+  </section>
+
+  <!-- SECTION 8: TECH CREDIBILITY -->
+  <section id="tech">
+    <p class="eyebrow">Built on Google's most powerful infrastructure</p>
+    <div class="logo-row">
+      <div class="tech-logo">Gemini AI</div>
+      <div class="tech-logo">Google Maps</div>
+      <div class="tech-logo">Cloud Vision</div>
+      <div class="tech-logo">Firebase</div>
+      <div class="tech-logo">Cloud Run</div>
+    </div>
+    <div class="divider-line"></div>
+  </section>
+
+  <!-- SECTION 9: FINAL CTA -->
+  <section id="cta">
+    <h2>Your city doesn't<br>fix itself.<br>
+        <span class="highlight">You do.</span></h2>
+    <p>Join thousands of citizens already making an impact.</p>
+    <div class="cta-buttons">
+      <div class="btn-magnetic">
+        <a href="/app" class="btn-primary large" id="cta-start-btn">Get Started Free →</a>
+      </div>
+      <div class="btn-magnetic">
+        <a href="#map-section" class="btn-ghost large">View Live Map</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- JS Scripts -->
+  <script>
+    // Initialize GSAP and ScrollTrigger
+    gsap.registerPlugin(ScrollTrigger);
+
+    // Lenis Smooth Scroll Configuration (160fps smooth scrolling)
+    const lenis = new Lenis({
+      duration: 1.4,
+      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      smooth: true,
+      smoothTouch: true
+    });
+
+    gsap.ticker.add((time) => {
+      lenis.raf(time * 1000);
+    });
+    gsap.ticker.lagSmoothing(0);
+
+    // Sync ScrollTrigger updates with Lenis scrolling
+    lenis.on('scroll', ScrollTrigger.update);
+
+    // 1. Smooth custom cursor
+    const cursor = document.querySelector('.cursor');
+    const follower = document.querySelector('.cursor-follower');
+    document.addEventListener('mousemove', (e) => {
+      gsap.to(cursor, { x: e.clientX, y: e.clientY, duration: 0.1 });
+      gsap.to(follower, { x: e.clientX, y: e.clientY, duration: 0.3 });
+    });
+
+    // Hover scales follower
+    document.querySelectorAll('a, button, .chip, .pin, .ai-card, .pain-card, .mock-chip').forEach(el => {
+      el.addEventListener('mouseenter', () => {
+        gsap.to(follower, { width: 44, height: 44, borderColor: '#D4AF37', duration: 0.2 });
+      });
+      el.addEventListener('mouseleave', () => {
+        gsap.to(follower, { width: 30, height: 30, borderColor: '#1A1A1A', duration: 0.2 });
+      });
+    });
+
+    // 2. Stagger hero text in on load
+    gsap.from(".hero-content h1 .word", {
+      y: 120,
+      opacity: 0,
+      duration: 1.2,
+      stagger: 0.15,
+      ease: "power4.out",
+      delay: 0.3
+    });
+
+    gsap.from(".badge", { 
+      scale: 0.8, 
+      opacity: 0, 
+      duration: 0.8, 
+      ease: "back.out(1.7)" 
+    });
+
+    // Parallax on scroll for hero content
+    gsap.to(".hero-content", {
+      y: -200,
+      opacity: 0,
+      scrollTrigger: {
+        trigger: "#hero",
+        start: "top top",
+        end: "bottom top",
+        scrub: 1
+      }
+    });
+
+    // 3. Problem Section Animations
+    // Reveal pain cards on scroll
+    gsap.from(".pain-card", {
+      x: (i) => ["-100vw", "100vw", 0][i],
+      y: (i) => [0, 0, 150][i],
+      opacity: 0,
+      duration: 1.2,
+      stagger: 0.2,
+      ease: "power3.out",
+      scrollTrigger: {
+        trigger: "#problem",
+        start: "top 70%"
+      }
+    });
+
+    // Letter-by-letter statement reveal with blur
+    const statementEl = document.getElementById("statement-rebuilt");
+    const chars = statementEl.textContent.split("");
+    statementEl.innerHTML = chars.map(char => `<span class="char">${char === ' ' ? '&nbsp;' : char}</span>`).join("");
+
+    gsap.from("#statement-rebuilt .char", {
+      opacity: 0,
+      filter: "blur(20px)",
+      transform: "translateY(20px) translateZ(0)",
+      stagger: 0.03,
+      duration: 0.5,
+      ease: "power2.out",
+      scrollTrigger: {
+        trigger: "#problem",
+        start: "top 40%"
+      }
+    });
+
+    // 4. Pinned Scroll triggers for Product Reveal
+    ScrollTrigger.create({
+      trigger: "#reveal",
+      pin: true,
+      start: "top top",
+      end: "+=300%",
+      scrub: 1,
+      onUpdate: (self) => {
+        const progress = self.progress;
+        const screens = document.querySelectorAll(".screen");
+        const steps = document.querySelectorAll(".step");
+        
+        let activeIdx = 0;
+        if (progress >= 0.75) activeIdx = 3;
+        else if (progress >= 0.5) activeIdx = 2;
+        else if (progress >= 0.25) activeIdx = 1;
+
+        screens.forEach((s, idx) => {
+          if (idx === activeIdx) s.classList.add("active");
+          else s.classList.remove("active");
+        });
+
+        steps.forEach((s, idx) => {
+          if (idx === activeIdx) s.classList.add("active");
+          else s.classList.remove("active");
+        });
+      }
+    });
+
+    // Phone mockup floating loop
+    gsap.to(".phone-mockup", {
+      y: -15,
+      duration: 2.5,
+      ease: "sine.inOut",
+      yoyo: true,
+      repeat: -1
+    });
+
+    // 5. Horizontal scroll driven by vertical scroll (AI Showcase)
+    gsap.to(".h-track", {
+      x: () => -(document.querySelector(".h-track").scrollWidth - window.innerWidth),
+      ease: "none",
+      scrollTrigger: {
+        trigger: "#ai-showcase",
+        pin: true,
+        scrub: 1,
+        end: () => "+=" + document.querySelector(".h-track").scrollWidth
+      }
+    });
+
+    // AI Showcase card entrance 3D rotation and Tech Tag typewriter effect
+    const aiCards = document.querySelectorAll('.ai-card');
+    aiCards.forEach(card => {
+      // 3D rotation transition on enter viewport
+      gsap.fromTo(card, 
+        { rotateY: 15, transformOrigin: "left center" },
+        { 
+          rotateY: 0, 
+          ease: "none",
+          scrollTrigger: {
+            trigger: card,
+            start: "left right",
+            end: "right left",
+            scrub: true
+          }
+        }
+      );
+
+      // Typewriter tag animation
+      const tag = card.querySelector('.tech-tag');
+      const text = tag.getAttribute('data-text');
+      let isTyped = false;
+
+      ScrollTrigger.create({
+        trigger: card,
+        start: "left 70%",
+        onEnter: () => {
+          if (!isTyped) {
+            isTyped = true;
+            let current = "";
+            let i = 0;
+            const timer = setInterval(() => {
+              if (i < text.length) {
+                current += text.charAt(i);
+                tag.textContent = current;
+                i++;
+              } else {
+                clearInterval(timer);
+              }
+            }, 50);
+          }
+        }
+      });
+    });
+
+    // 6. Live Map parallax, pins and heatmap
+    gsap.to(".map-bg", {
+      scale: 1.1,
+      scrollTrigger: {
+        trigger: "#map-section",
+        scrub: 2
+      }
+    });
+
+    // Heatmap opacity fade-in
+    gsap.to(".heatmap-overlay", {
+      opacity: 0.7,
+      scrollTrigger: {
+        trigger: "#map-section",
+        start: "top bottom",
+        end: "bottom top",
+        scrub: 1
+      }
+    });
+
+    // Sequential pins bounce drop
+    gsap.from(".pin", {
+      y: -60,
+      opacity: 0,
+      duration: 0.6,
+      ease: "bounce.out",
+      stagger: 0.15,
+      scrollTrigger: {
+        trigger: "#map-section",
+        start: "top 60%"
+      }
+    });
+
+    // Filter chips slide up with stagger
+    gsap.from(".chip", {
+      y: 30,
+      opacity: 0,
+      stagger: 0.1,
+      duration: 0.6,
+      ease: "power2.out",
+      scrollTrigger: {
+        trigger: ".filter-chips",
+        start: "top 90%"
+      }
+    });
+
+    // Interactive map filtering logic (website UI integration)
+    const chips = document.querySelectorAll('.chip');
+    const mockChips = document.querySelectorAll('.mock-chip');
+    const pins = document.querySelectorAll('.pin');
+
+    const filterCategory = (category) => {
+      // Toggle active states on side chips
+      chips.forEach(c => {
+        if (c.getAttribute('data-category') === category) c.classList.add('active');
+        else c.classList.remove('active');
+      });
+
+      // Toggle active states on mock app chips
+      mockChips.forEach(c => {
+        if (c.getAttribute('data-category') === category) c.classList.add('active');
+        else c.classList.remove('active');
+      });
+
+      // Filter pins
+      pins.forEach(pin => {
+        const pinCategory = pin.getAttribute('data-category');
+        if (category === 'all' || pinCategory === category) {
+          gsap.to(pin, { opacity: 1, scale: 1, duration: 0.4, pointerEvents: 'auto' });
+        } else {
+          gsap.to(pin, { opacity: 0, scale: 0, duration: 0.4, pointerEvents: 'none' });
+        }
+      });
+    };
+
+    chips.forEach(chip => {
+      chip.addEventListener('click', () => {
+        filterCategory(chip.getAttribute('data-category'));
+      });
+    });
+
+    mockChips.forEach(chip => {
+      chip.addEventListener('click', () => {
+        filterCategory(chip.getAttribute('data-category'));
+      });
+    });
+
+    // 7. Stats Counter Rollup, Ghost text Parallax, flip reveal
+    ScrollTrigger.create({
+      trigger: "#stats",
+      start: "top 70%",
+      onEnter: () => {
+        document.querySelectorAll(".counter").forEach(el => {
+          const target = Number(el.dataset.target);
+          gsap.to(el, {
+            innerHTML: target,
+            duration: 2.5,
+            ease: "power2.out",
+            snap: { innerHTML: 1 }
+          });
+        });
+      }
+    });
+
+    // Ghost parallax
+    gsap.to(".stats-bg-text", {
+      y: -150,
+      scrollTrigger: {
+        trigger: "#stats",
+        scrub: true,
+        start: "top bottom",
+        end: "bottom top"
+      }
+    });
+
+    // Flip card reveal
+    gsap.from(".stat-item", {
+      rotateX: 90,
+      opacity: 0,
+      duration: 1,
+      stagger: 0.15,
+      ease: "power2.out",
+      scrollTrigger: {
+        trigger: "#stats",
+        start: "top 80%"
+      }
+    });
+
+    // 8. Gamification slide-in leaderboard and badges scale
+    gsap.from(".lb-row", {
+      x: 150,
+      opacity: 0,
+      stagger: 0.15,
+      duration: 1,
+      ease: "power3.out",
+      scrollTrigger: {
+        trigger: ".leaderboard",
+        start: "top 80%"
+      }
+    });
+
+    gsap.from(".badge-item", {
+      scale: 0,
+      opacity: 0,
+      stagger: 0.08,
+      duration: 0.8,
+      ease: "back.out(2.5)",
+      scrollTrigger: {
+        trigger: ".badges-showcase",
+        start: "top 85%"
+      }
+    });
+
+    // 9. Tech Credibility blur reveal, marquee, divider line scale
+    gsap.from(".tech-logo", {
+      opacity: 0,
+      filter: "blur(10px)",
+      stagger: 0.1,
+      duration: 1.2,
+      ease: "power2.out",
+      scrollTrigger: {
+        trigger: "#tech",
+        start: "top 85%"
+      }
+    });
+
+    gsap.to(".divider-line", {
+      scaleX: 1,
+      duration: 1.5,
+      ease: "power3.out",
+      scrollTrigger: {
+        trigger: ".divider-line",
+        start: "top 95%"
+      }
+    });
+
+    // 10. Final CTA Background Shift & Magnetic button effect & Confetti
+    // Confetti click trigger
+    const startBtn = document.getElementById("cta-start-btn");
+    startBtn.addEventListener('click', (e) => {
+      confetti({
+        particleCount: 150,
+        spread: 80,
+        origin: { y: 0.6 }
+      });
+    });
+
+    // Magnetic effect
+    const magneticBtns = document.querySelectorAll(".btn-magnetic");
+    magneticBtns.forEach(btn => {
+      document.addEventListener("mousemove", (e) => {
+        const rect = btn.getBoundingClientRect();
+        const btnX = rect.left + rect.width / 2;
+        const btnY = rect.top + rect.height / 2;
+        const distX = e.clientX - btnX;
+        const distY = e.clientY - btnY;
+        const distance = Math.sqrt(distX * distX + distY * distY);
+
+        if (distance < 120) {
+          gsap.to(btn, {
+            x: distX * 0.25,
+            y: distY * 0.25,
+            duration: 0.3,
+            ease: "power2.out"
+          });
+        } else {
+          gsap.to(btn, {
+            x: 0,
+            y: 0,
+            duration: 0.5,
+            ease: "elastic.out(1, 0.3)"
+          });
+        }
+      });
+    });
+
+    // Gradient background shift cycle on scroll
+    gsap.to("#cta", {
+      background: "radial-gradient(circle, rgba(212,175,55,0.05) 0%, rgba(249,248,246,1) 100%)",
+      scrollTrigger: {
+        trigger: "#cta",
+        start: "top bottom",
+        end: "bottom top",
+        scrub: true
+      }
+    });
+
+    // 11. Canvas-driven scroll sequences (Using 3 layered frame sets)
+    const initCanvasSequence = (canvasId, folderName, startTrigger) => {
+      const canvas = document.getElementById(canvasId);
+      const context = canvas.getContext("2d");
+      
+      const setCanvasSize = () => {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+      };
+      
+      setCanvasSize();
+      window.addEventListener('resize', setCanvasSize);
+
+      const frameCount = 101;
+      const images = [];
+      const sequence = { frame: 0 };
+
+      // Load frames
+      for (let i = 1; i <= frameCount; i++) {
+        const img = new Image();
+        img.src = `/vibe-video/${folderName}/ezgif-frame-${i.toString().padStart(3, '0')}.jpg`;
+        images.push(img);
+      }
+
+      const render = () => {
+        const img = images[sequence.frame];
+        if (img) {
+          context.clearRect(0, 0, canvas.width, canvas.height);
+          
+          // Cover aspect ratio calculations
+          const hRatio = canvas.width / img.width;
+          const vRatio = canvas.height / img.height;
+          const ratio = Math.max(hRatio, vRatio);
+          const centerShift_x = (canvas.width - img.width * ratio) / 2;
+          const centerShift_y = (canvas.height - img.height * ratio) / 2;
+          
+          context.drawImage(img, 0, 0, img.width, img.height, centerShift_x, centerShift_y, img.width * ratio, img.height * ratio);
+        }
+      };
+
+      images[0].onload = render;
+
+      gsap.to(sequence, {
+        frame: frameCount - 1,
+        snap: "frame",
+        ease: "none",
+        scrollTrigger: {
+          trigger: startTrigger,
+          start: "top top",
+          end: "bottom top",
+          scrub: 1,
+          onUpdate: render
+        }
+      });
+    };
+
+    // Layer 1 Hero video sequence
+    initCanvasSequence("video-canvas-1", "ezgif-49be3fbe3c7bbdf5-jpg", "#hero");
+    
+    // Layer 2 Problem video sequence
+    initCanvasSequence("video-canvas-2", "ezgif-4c8d36d4007d0c53-jpg", "#problem");
+    
+    // Layer 3 Product Reveal sequence
+    initCanvasSequence("video-canvas-3", "ezgif-4f63929d779bcd89-jpg", "#reveal");
+
+    // 12. Particles skyline silhouette in Hero
+    const pCanvas = document.getElementById("particle-canvas");
+    const pCtx = pCanvas.getContext("2d");
+    
+    let particles = [];
+    const setPCanvasSize = () => {
+      pCanvas.width = window.innerWidth;
+      pCanvas.height = window.innerHeight;
+    };
+    
+    setPCanvasSize();
+    window.addEventListener('resize', setPCanvasSize);
+
+    class Particle {
+      constructor() {
+        this.x = Math.random() * pCanvas.width;
+        this.y = pCanvas.height + Math.random() * 100;
+        this.vx = (Math.random() - 0.5) * 0.4;
+        this.vy = -(Math.random() * 0.6 + 0.3);
+        this.size = Math.random() * 1.2 + 0.4;
+        this.alpha = Math.random() * 0.4 + 0.2;
+      }
+      update(mouseX, mouseY) {
+        this.x += this.vx;
+        this.y += this.vy;
+        
+        // Drifting skyline bounds reset
+        if (this.y < 0) {
+          this.y = pCanvas.height;
+          this.x = Math.random() * pCanvas.width;
+        }
+
+        // Proximity glowing gold/charcoal interaction
+        if (mouseX && mouseY) {
+          const dx = this.x - mouseX;
+          const dy = this.y - mouseY;
+          const dist = Math.sqrt(dx*dx + dy*dy);
+          if (dist < 120) {
+            this.glowing = true;
+            this.alpha = Math.min(0.9, this.alpha + 0.05);
+          } else {
+            this.glowing = false;
+            this.alpha = Math.max(0.2, this.alpha - 0.01);
+          }
+        }
+      }
+      draw() {
+        pCtx.beginPath();
+        pCtx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        pCtx.fillStyle = this.glowing ? `rgba(212, 175, 55, ${this.alpha})` : `rgba(26, 26, 26, ${this.alpha * 0.4})`;
+        pCtx.fill();
+      }
+    }
+
+    // Init 200 drift particles
+    for (let i = 0; i < 200; i++) {
+      particles.push(new Particle());
+    }
+
+    let pMouseX = null;
+    let pMouseY = null;
+    document.addEventListener('mousemove', (e) => {
+      pMouseX = e.clientX;
+      pMouseY = e.clientY;
+    });
+
+    const animateParticles = () => {
+      pCtx.clearRect(0, 0, pCanvas.width, pCanvas.height);
+      particles.forEach(p => {
+        p.update(pMouseX, pMouseY);
+        p.draw();
+      });
+      requestAnimationFrame(animateParticles);
+    };
+
+    animateParticles();
+  </script>
+</body>
+</html>

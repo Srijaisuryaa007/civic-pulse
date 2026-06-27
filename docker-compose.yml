@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runner
+    image: civicpulse-server:latest
+    container_name: civicpulse-api
+    ports:
+      - "5000:8080"
+    environment:
+      - NODE_ENV=production
+      - PORT=8888
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-your_gemini_api_key_here}
+      - GOOGLE_CLOUD_VISION_KEY=${GOOGLE_CLOUD_VISION_KEY:-your_google_cloud_vision_key_here}
+      - FIREBASE_ADMIN_SDK=${FIREBASE_ADMIN_SDK:-your_firebase_admin_sdk_json_here}
+    volumes:
+      - ./server/data:/app/server/data
+      - ./server/public/uploads:/app/server/public/uploads
+
+  client-dev:
+    image: node:18-alpine
+    container_name: civicpulse-client-dev
+    working_dir: /client
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./client:/client
+    command: sh -c "npm install && npm run dev -- --host"
