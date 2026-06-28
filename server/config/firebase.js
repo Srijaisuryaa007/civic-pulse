@@ -2,6 +2,25 @@ import admin from 'firebase-admin';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { createRequire } from 'module';
+
+const require = createRequire(import.meta.url);
+
+let serviceAccount;
+try {
+  serviceAccount = require('../config/serviceAccount.json');
+} catch (e) {
+  console.error('==============================================');
+  console.error('FATAL: serviceAccount.json not found.');
+  console.error('Steps to fix:');
+  console.error('1. Go to Firebase Console');
+  console.error('2. Project Settings → Service accounts');
+  console.error('3. Click Generate new private key');
+  console.error('4. Save as server/config/serviceAccount.json');
+  console.error('5. Add it to .gitignore immediately');
+  console.error('==============================================');
+  process.exit(1);
+}
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -177,23 +196,18 @@ let isSimulationMode = false;
 
 // Attempt real initialization or fall back to simulation
 try {
-  const sdkEnv = process.env.FIREBASE_ADMIN_SDK;
-  if (sdkEnv && sdkEnv !== 'your_firebase_admin_sdk_json_here') {
-    const serviceAccount = JSON.parse(sdkEnv);
+  if (!admin.apps.length) {
     admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount),
-      storageBucket: `${serviceAccount.project_id}.appspot.com`
+      credential: admin.credential.cert(serviceAccount)
     });
-    db = admin.firestore();
-    console.log("🔥 Connected to Firebase Firestore in PRODUCTION mode.");
-  } else {
-    throw new Error("Missing FIREBASE_ADMIN_SDK key. Initializing simulation mode.");
   }
+  db = admin.firestore();
+  isSimulationMode = false;
+  console.log('Firebase Firestore connected successfully.');
 } catch (error) {
-  console.log(`⚠️ Firebase Admin initialization failed: ${error.message}`);
-  console.log("ℹ️ Initializing local database emulator (Simulation Mode). All data stored in server/data/db.json");
-  db = new MockFirestore();
-  isSimulationMode = true;
+  console.error('Firebase connection failed:', error.message);
+  console.error('Check your serviceAccount.json file.');
+  process.exit(1);
 }
 
 export { db, isSimulationMode };

@@ -8,6 +8,16 @@ import dotenv from 'dotenv';
 // Import routes
 import issueRoutes from './routes/issues.js';
 import analyticsRoutes from './routes/analytics.js';
+import { isSimulationMode } from './config/firebase.js';
+
+if (isSimulationMode) {
+  console.error('');
+  console.error('SIMULATION MODE IS ACTIVE.');
+  console.error('Data is being stored in db.json.');
+  console.error('This is NOT suitable for production.');
+  console.error('Fix your Firebase configuration.');
+  console.error('');
+}
 
 dotenv.config();
 

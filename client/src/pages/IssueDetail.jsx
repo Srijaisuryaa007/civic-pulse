@@ -113,6 +113,57 @@ export default function IssueDetail() {
     return 0;
   };
 
+  const formatDate = (timestamp) => {
+    if (!timestamp) return 'Unknown';
+    try {
+      // Handle Firestore Timestamp object
+      if (timestamp?.toDate) {
+        return timestamp.toDate().toLocaleDateString('en-IN', {
+          day: 'numeric',
+          month: 'short', 
+          year: 'numeric'
+        });
+      }
+      // Handle Firestore Timestamp as plain object {seconds, nanoseconds}
+      if (timestamp?.seconds) {
+        return new Date(timestamp.seconds * 1000)
+          .toLocaleDateString('en-IN', {
+            day: 'numeric',
+            month: 'short',
+            year: 'numeric'
+          });
+      }
+      // Handle regular date string or number
+      const date = new Date(timestamp);
+      if (isNaN(date.getTime())) return 'Unknown';
+      return date.toLocaleDateString('en-IN', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric'
+      });
+    } catch (e) {
+      return 'Unknown';
+    }
+  };
+
+  const formatDateTime = (timestamp) => {
+    if (!timestamp) return 'Unknown';
+    try {
+      if (timestamp?.toDate) {
+        return timestamp.toDate().toLocaleString('en-IN');
+      }
+      if (timestamp?.seconds) {
+        return new Date(timestamp.seconds * 1000)
+          .toLocaleString('en-IN');
+      }
+      const date = new Date(timestamp);
+      if (isNaN(date.getTime())) return 'Unknown';
+      return date.toLocaleString('en-IN');
+    } catch (e) {
+      return 'Unknown';
+    }
+  };
+
   const currentStepIdx = getStepIndex(issue.status);
 
   return (
@@ -194,7 +245,7 @@ export default function IssueDetail() {
                 )}
               </div>
               <span className="filed-date flex items-center gap-1">
-                <Calendar className="h-3.5 w-3.5 text-sage" /> FILED {new Date(issue.createdAt).toLocaleDateString()}
+                <Calendar className="h-3.5 w-3.5 text-sage" /> FILED {formatDate(issue.createdAt)}
               </span>
             </div>
 
@@ -306,7 +357,7 @@ export default function IssueDetail() {
                     <div className="h-1.5 w-1.5 rounded-full bg-sage mt-2 shrink-0" />
                     <div>
                       <p className="history-entry-title">
-                        {hist.status} <span className="history-entry-date">{new Date(hist.timestamp).toLocaleString()}</span>
+                        {hist.status} <span className="history-entry-date">{formatDateTime(hist.timestamp)}</span>
                       </p>
                       <p className="history-entry-body">{hist.note}</p>
                     </div>
@@ -337,7 +388,7 @@ export default function IssueDetail() {
                     <div className="flex-1">
                       <div className="flex items-center justify-between mb-1 text-sm font-mono uppercase tracking-widest text-neutral-400">
                         <span className="font-bold text-forest">{comment.userName}</span>
-                        <span>{new Date(comment.createdAt).toLocaleDateString()}</span>
+                        <span>{formatDate(comment.createdAt)}</span>
                       </div>
                       <p className="text-neutral-500 leading-relaxed font-body text-justify">{comment.text}</p>
                     </div>

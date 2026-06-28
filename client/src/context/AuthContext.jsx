@@ -57,9 +57,20 @@ export function AuthProvider({ children }) {
         }
       } catch (error) {
         console.error("Auth state change error:", error);
-        // Fallback to minimal user object to prevent hard crash if Firestore is blocked
-        if (firebaseUser) setUser(firebaseUser);
-        else setUser(null);
+        if (firebaseUser) {
+          setUser({
+            ...firebaseUser,
+            role: 'citizen',
+            xp: 0,
+            reportsCount: 0,
+            verifiedCount: 0,
+            badges: [],
+            displayName: firebaseUser.displayName || 'Citizen',
+            photoURL: firebaseUser.photoURL || null
+          });
+        } else {
+          setUser(null);
+        }
       } finally {
         setLoading(false);
       }
