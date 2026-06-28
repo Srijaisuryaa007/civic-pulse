@@ -199,7 +199,7 @@ try {
   if (!admin.apps.length) {
     admin.initializeApp({
       credential: admin.credential.cert(serviceAccount),
-      storageBucket: `${serviceAccount.project_id}.firebasestorage.app`
+      storageBucket: `${serviceAccount.project_id}.appspot.com`
     });
   }
   db = admin.firestore();
