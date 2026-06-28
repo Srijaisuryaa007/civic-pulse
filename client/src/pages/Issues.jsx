@@ -23,13 +23,13 @@ export default function Issues() {
   // Selected issue for similar issues sidebar widget
   const [selectedForSidebar, setSelectedForSidebar] = useState(null);
 
-  const getCategoryEmoji = (cat) => {
+  const getCategoryCode = (cat) => {
     const c = (cat || '').toLowerCase();
-    if (c === 'pothole') return '🚧';
-    if (c === 'water leak') return '💧';
-    if (c === 'streetlight') return '💡';
-    if (c === 'waste') return '🗑️';
-    return '📋';
+    if (c === 'pothole') return 'PT';
+    if (c === 'water leak') return 'WL';
+    if (c === 'streetlight') return 'SL';
+    if (c === 'waste') return 'WG';
+    return 'OT';
   };
 
   const getSeverityLabel = (severity) => {
@@ -128,13 +128,7 @@ export default function Issues() {
           <p className="font-body text-sm text-neutral-500 mt-1">Explore and verify community issues. Your coordinates help validate regional priorities.</p>
         </div>
         <Link
-          to={user ? "/report" : "#"}
-          onClick={(e) => {
-            if (!user) {
-              e.preventDefault();
-              alert("Please sign in first to report issues.");
-            }
-          }}
+          to={user ? "/report" : "/login"}
           className="px-6 py-3 bg-forest hover:bg-terracotta text-white rounded-full text-xs font-mono font-bold uppercase tracking-widest transition-all shadow-soft hover:shadow-soft-md self-stretch md:self-auto text-center"
         >
           File Report
@@ -243,8 +237,8 @@ export default function Issues() {
           <div className="lg:col-span-2 space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               {paginatedIssues.map((issue, idx) => {
+                const catCode = getCategoryCode(issue.category);
                 const badgeLabel = getSeverityLabel(issue.severity);
-                const emoji = getCategoryEmoji(issue.category);
                 const isSelected = activeSidebarIssue?.id === issue.id;
 
                 // Alternate cards are translated vertically to break the grid (Organic/Botanical staggered feel)
@@ -269,8 +263,9 @@ export default function Issues() {
                         alt={issue.title}
                         className="w-full h-full object-cover grayscale group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700"
                       />
-                      <span className="absolute top-3 left-3 px-3 py-1 rounded-full text-[9px] font-mono font-bold uppercase bg-paper/90 text-forest backdrop-blur-sm border border-stone/55 shadow-soft">
-                        {emoji} {issue.category}
+                      <span className="absolute top-3 left-3 flex items-center gap-1.5 px-3 py-1 rounded-full text-[9px] font-mono font-bold uppercase bg-paper/90 text-forest backdrop-blur-sm border border-stone/55 shadow-soft">
+                        <span className="cat-tag">{catCode}</span>
+                        <span>{issue.category}</span>
                       </span>
 
                       {/* Status Badge */}
@@ -427,7 +422,7 @@ export default function Issues() {
                           <p className="text-[9px] font-mono text-neutral-450 mt-1.5 line-clamp-1 leading-normal">{sim.location?.address}</p>
                           <div className="flex items-center justify-between mt-2 pt-2 border-t border-stone/50 text-[9px] font-mono uppercase tracking-widest">
                             <span className="text-neutral-450">{sim.status}</span>
-                            <span className="font-bold text-terracotta hover:underline">Select &rarr;</span>
+                            <span className="font-bold text-terracotta hover:underline">Select</span>
                           </div>
                         </div>
                       ))}

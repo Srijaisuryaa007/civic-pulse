@@ -1,153 +1,133 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import { 
+  onAuthStateChanged,
+  signInWithPopup,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signOut,
+  updateProfile
+} from 'firebase/auth';
+import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
+import { auth, db, googleProvider } from '../firebase';
 
-const AuthContext = createContext();
+const AuthContext = createContext(null);
 
-export const useAuth = () => useContext(AuthContext);
-
-export const AuthProvider = ({ children }) => {
+export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [showTutorial, setShowTutorial] = useState(false);
 
-  // Check if user is stored in local storage on mount
   useEffect(() => {
-    const savedUser = localStorage.getItem('civicpulse_user');
-    if (savedUser) {
-      const parsedUser = JSON.parse(savedUser);
-      setUser(parsedUser);
-      // Fetch latest points & profile from backend
-      fetchUserProfile(parsedUser.uid);
-    } else {
-      setLoading(false);
-    }
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      try {
+        if (firebaseUser) {
+          // Create or update user document in Firestore
+          const userRef = doc(db, 'users', firebaseUser.uid);
+          const userSnap = await getDoc(userRef);
+          
+          if (!userSnap.exists()) {
+            // First time login — create user profile
+            await setDoc(userRef, {
+              uid: firebaseUser.uid,
+              email: firebaseUser.email,
+              displayName: firebaseUser.displayName || 'Citizen',
+              photoURL: firebaseUser.photoURL || null,
+              username: '', // Let them set it later
+              xp: 0,
+              role: 'citizen',
+              reportsCount: 0,
+              verifiedCount: 0,
+              badges: [],
+              joinedAt: serverTimestamp(),
+              lastActive: serverTimestamp()
+            });
+          } else {
+            // Update last active
+            await setDoc(userRef, 
+              { lastActive: serverTimestamp() }, 
+              { merge: true }
+            );
+          }
+          
+          // Merge Firebase user + Firestore profile
+          const profileSnap = await getDoc(userRef); // Fetch again to get merged data including timestamps
+          const profile = profileSnap.exists() ? profileSnap.data() : {};
+          setUser({ ...firebaseUser, ...profile });
+        } else {
+          setUser(null);
+        }
+      } catch (error) {
+        console.error("Auth state change error:", error);
+        // Fallback to minimal user object to prevent hard crash if Firestore is blocked
+        if (firebaseUser) setUser(firebaseUser);
+        else setUser(null);
+      } finally {
+        setLoading(false);
+      }
+    });
+    return () => unsubscribe();
   }, []);
 
-  const fetchUserProfile = async (uid) => {
-    try {
-      // In a real app, calls GET /api/users/:uid
-      const response = await fetch(`/api/issues?reporterId=${uid}`);
-      if (response.ok) {
-        // Let's also fetch dashboard/leaderboard to find current user details
-        const dashResp = await fetch('/api/analytics/dashboard');
-        if (dashResp.ok) {
-          const dashData = await dashResp.json();
-          const userInLeaderboard = dashData.leaderboard?.find(u => u.uid === uid);
-          
-          if (userInLeaderboard) {
-            const updated = {
-              ...JSON.parse(localStorage.getItem('civicpulse_user')),
-              points: userInLeaderboard.points || 0,
-              badges: userInLeaderboard.badges || []
-            };
-            setUser(updated);
-            localStorage.setItem('civicpulse_user', JSON.stringify(updated));
-            setLoading(false);
-            return;
-          }
-        }
-      }
-    } catch (err) {
-      console.warn("Failed to fetch latest user profile, keeping cached details.", err);
-    }
-    setLoading(false);
+  const loginWithGoogle = async () => {
+    const result = await signInWithPopup(auth, googleProvider);
+    return result.user;
   };
 
-  const loginWithGoogleSimulated = async () => {
-    setLoading(true);
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 800));
-
-    // Simulated user info
-    const mockUid = `google-${Math.random().toString(36).substring(2, 9)}`;
-    const newUser = {
-      uid: mockUid,
-      displayName: "Jane Doe",
-      email: "jane.doe@gmail.com",
-      photoURL: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150",
-      username: "", // Blank initially to trigger username setup step
-      points: 0,
-      badges: [],
-      isOnboarded: false
-    };
-
-    setUser(newUser);
-    localStorage.setItem('civicpulse_user', JSON.stringify(newUser));
-    setLoading(false);
+  const loginWithEmail = async (email, password) => {
+    const result = await signInWithEmailAndPassword(auth, email, password);
+    return result.user;
   };
 
+  const registerWithEmail = async (email, password, displayName) => {
+    const result = await createUserWithEmailAndPassword(auth, email, password);
+    await updateProfile(result.user, { displayName });
+    return result.user;
+  };
+
+  const logout = () => signOut(auth);
+
+  // Fallback for onboarding the username
   const setUsername = async (username) => {
     if (!user) return;
     setLoading(true);
-
-    const updatedUser = {
-      ...user,
-      username,
-      isOnboarded: true
-    };
-
-    // Register user to backend
     try {
-      await fetch('/api/issues', {
-        method: 'GET' // Just a ping, or we can send profile creation if database handles it.
-        // The points system automatically sets profile in database on first report/action.
-        // We will also send user data to the backend to create a profile!
-      });
-      
-      // Let's send a registration request to the backend
-      // We will make a tiny fetch call to create/update user
-      // We can patch /api/issues/users if needed, or simply update local storage.
-      // Let's create user document by mimicking point award of 0 points!
-      // This is a neat trick: it creates the user record in database.
-      await fetch(`/api/issues/sim-user`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          uid: user.uid,
-          displayName: user.displayName,
-          username: username,
-          photoURL: user.photoURL
-        })
-      }).catch(e => console.log("Sim user registration failed:", e));
-
-    } catch (e) {
-      console.log(e);
+      const userRef = doc(db, 'users', user.uid);
+      await setDoc(userRef, { username }, { merge: true });
+      setUser(prev => ({ ...prev, username }));
+    } catch (error) {
+      console.error("Failed to set username:", error);
     }
-
-    setUser(updatedUser);
-    localStorage.setItem('civicpulse_user', JSON.stringify(updatedUser));
-    setShowTutorial(true); // Trigger tutorial tooltip
     setLoading(false);
   };
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('civicpulse_user');
-    setShowTutorial(false);
-  };
-
-  const dismissTutorial = () => {
-    setShowTutorial(false);
-  };
-
-  // Recalculate/refresh points
-  const refreshPoints = () => {
-    if (user?.uid) {
-      fetchUserProfile(user.uid);
+  const refreshPoints = async () => {
+    if (!user) return;
+    try {
+      const userRef = doc(db, 'users', user.uid);
+      const userSnap = await getDoc(userRef);
+      if (userSnap.exists()) {
+        const profile = userSnap.data();
+        setUser(prev => ({ ...prev, ...profile }));
+      }
+    } catch (e) {
+      console.error(e);
     }
   };
 
   return (
-    <AuthContext.Provider value={{
-      user,
-      loading,
-      login: loginWithGoogleSimulated,
-      logout,
-      setUsername,
-      showTutorial,
-      dismissTutorial,
-      refreshPoints
+    <AuthContext.Provider value={{ 
+      user, loading, 
+      loginWithGoogle, loginWithEmail, 
+      registerWithEmail, logout,
+      setUsername, refreshPoints
     }}>
-      {children}
+      {loading ? (
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: '#080808' }}>
+          <div style={{ width: '40px', height: '40px', borderRadius: '50%', border: '3px solid #333', borderTopColor: '#D4AF37', animation: 'spin 1s linear infinite' }} />
+          <style>{`@keyframes spin { 100% { transform: rotate(360deg); } }`}</style>
+        </div>
+      ) : children}
     </AuthContext.Provider>
   );
-};
+}
+
+export const useAuth = () => useContext(AuthContext);

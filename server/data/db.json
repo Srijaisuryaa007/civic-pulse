@@ -28,10 +28,12 @@
         "Plastic bag",
         "Road surface"
       ],
-      "status": "Reported",
-      "upvotes": 1,
+      "status": "In Progress",
+      "upvotes": 3,
       "upvotedBy": [
-        "google-khk3trg"
+        "google-khk3trg",
+        "GHLiqQ7I4rTUTSji2K2yMk4FYf62",
+        "MDWQDcISoxNGOADG2hyi2di56Cf1"
       ],
       "verifications": 0,
       "verifiedBy": [],
@@ -51,10 +53,25 @@
           "status": "Reported",
           "timestamp": "2026-06-27T12:52:23.845Z",
           "note": "Report finalized and confirmed by citizen."
+        },
+        {
+          "status": "Resolved",
+          "timestamp": "2026-06-28T05:28:27.220Z",
+          "note": "Status updated to Resolved by simulated Municipal Authority Inspector."
+        },
+        {
+          "status": "In Progress",
+          "timestamp": "2026-06-28T05:28:35.521Z",
+          "note": "Status updated to In Progress by simulated Municipal Authority Inspector."
+        },
+        {
+          "status": "In Progress",
+          "timestamp": "2026-06-28T05:33:37.907Z",
+          "note": "Status updated to In Progress by simulated Municipal Authority Inspector."
         }
       ],
       "createdAt": "2026-06-27T12:52:10.931Z",
-      "updatedAt": "2026-06-27T12:55:31.860Z",
+      "updatedAt": "2026-06-28T05:47:21.343Z",
       "id": "t4ew1684nqm"
     }
   ],
@@ -75,13 +92,35 @@
       "displayName": "Jane Doe",
       "username": "jaisuryaa",
       "photoURL": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150",
-      "points": 10,
+      "points": 60,
       "badges": [
         "First Reporter"
       ],
       "createdAt": "2026-06-27T10:42:00.175Z",
-      "updatedAt": "2026-06-27T12:52:10.934Z",
+      "updatedAt": "2026-06-28T05:28:27.222Z",
       "id": "google-khk3trg"
+    },
+    {
+      "uid": "google-pnh2guj",
+      "displayName": "Jane Doe",
+      "username": "jaisuryaa",
+      "photoURL": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150",
+      "points": 0,
+      "badges": [],
+      "createdAt": "2026-06-27T14:14:38.613Z",
+      "updatedAt": "2026-06-27T14:14:38.613Z",
+      "id": "google-pnh2guj"
+    },
+    {
+      "uid": "google-3mdtib1",
+      "displayName": "Jane Doe",
+      "username": "srijaisuryaa",
+      "photoURL": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150",
+      "points": 0,
+      "badges": [],
+      "createdAt": "2026-06-27T14:15:05.026Z",
+      "updatedAt": "2026-06-27T14:15:05.026Z",
+      "id": "google-3mdtib1"
     }
   ],
   "comments": []

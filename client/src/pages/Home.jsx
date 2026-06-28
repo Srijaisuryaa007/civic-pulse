@@ -44,11 +44,11 @@ export default function Home() {
   }, [issues]);
 
   const categories = [
-    { id: 'all', name: 'All Issues', icon: '🍃' },
-    { id: 'pothole', name: 'Potholes', icon: '🚧' },
-    { id: 'water leak', name: 'Water Leaks', icon: '💧' },
-    { id: 'streetlight', name: 'Streetlights', icon: '💡' },
-    { id: 'waste', name: 'Waste / Garbage', icon: '🗑️' }
+    { id: 'all', name: 'All Issues' },
+    { id: 'pothole', name: 'Potholes' },
+    { id: 'water leak', name: 'Water Leaks' },
+    { id: 'streetlight', name: 'Streetlights' },
+    { id: 'waste', name: 'Waste / Garbage' }
   ];
 
   return (
@@ -104,10 +104,9 @@ export default function Home() {
               className={`flex items-center gap-1.5 px-4.5 py-2.5 text-xs font-mono uppercase tracking-wider border transition-all duration-500 ${
                 activeCategory === cat.id
                   ? 'bg-forest text-white border-transparent rounded-full shadow-soft'
-                  : 'bg-paper text-forest hover:bg-neutral-50 border-stone rounded-full shadow-soft'
+                  : 'bg-paper text-forest hover:bg-neutral-55 border-stone rounded-full shadow-soft'
               }`}
             >
-              <span>{cat.icon}</span>
               <span>{cat.name}</span>
             </button>
           ))}
@@ -131,13 +130,7 @@ export default function Home() {
         {/* 5. Floating Action Button (FAB) (Pill Circle shape) */}
         <div className="absolute bottom-6 right-6 z-25">
           <Link
-            to={user ? "/report" : "#"}
-            onClick={(e) => {
-              if (!user) {
-                e.preventDefault();
-                alert("Please Sign In first to report a civic issue.");
-              }
-            }}
+            to={user ? "/report" : "/login"}
             className="flex h-12 w-12 items-center justify-center rounded-full bg-forest text-white shadow-soft-md hover:scale-105 active:scale-95 transition-all duration-500 hover:bg-terracotta relative group"
             id="fab-report-button"
           >

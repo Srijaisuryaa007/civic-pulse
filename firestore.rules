@@ -1,0 +1,64 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isLoggedIn() {
+      return request.auth != null;
+    }
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+    function getUserRole() {
+      return get(/databases/$(database)/documents/
+                 users/$(request.auth.uid)).data.role;
+    }
+    function isInspector() {
+      return getUserRole() == 'inspector' 
+          || getUserRole() == 'admin';
+    }
+
+    // Users: only read/write own profile
+    match /users/{userId} {
+      allow read:  if isLoggedIn() && isOwner(userId);
+      allow write: if isLoggedIn() && isOwner(userId);
+    }
+
+    // Issues: public read, restricted write
+    match /issues/{issueId} {
+      // Anyone logged in can read
+      allow read: if isLoggedIn();
+      
+      // Only authenticated user can create 
+      // and must set themselves as author
+      allow create: if isLoggedIn()
+        && request.resource.data.authorId 
+           == request.auth.uid;
+      
+      // Author can update their own issue
+      // Inspector/admin can update status only
+      allow update: if isLoggedIn() && (
+        isOwner(resource.data.authorId)
+        || isInspector()
+        || request.resource.data.diff(resource.data)
+           .affectedKeys()
+           .hasOnly(['votedBy','votes',
+                     'verifiedBy','verifications'])
+      );
+      
+      // Only author can delete
+      allow delete: if isLoggedIn() 
+        && isOwner(resource.data.authorId);
+    }
+
+    // Comments: any logged in user
+    match /issues/{issueId}/comments/{commentId} {
+      allow read:   if isLoggedIn();
+      allow create: if isLoggedIn()
+        && request.resource.data.authorId 
+           == request.auth.uid;
+      allow delete: if isLoggedIn()
+        && isOwner(resource.data.authorId);
+    }
+  }
+}

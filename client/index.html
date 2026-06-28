@@ -11,6 +11,14 @@
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,800;1,400;1,600&family=Source+Sans+3:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   </head>
   <body class="bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-50 min-h-screen font-sans transition-colors duration-200">
+    <script>
+      window.addEventListener('error', function(e) {
+        document.body.innerHTML += '<div style="color: red; padding: 20px; z-index: 99999; position: absolute; top:0; left: 0; background: white; font-size: 20px; width: 100%;"><strong>Error:</strong> ' + e.message + '<br>' + e.filename + ':' + e.lineno + '</div>';
+      });
+      window.addEventListener('unhandledrejection', function(e) {
+        document.body.innerHTML += '<div style="color: red; padding: 20px; z-index: 99999; position: absolute; top:0; left: 0; background: white; font-size: 20px; width: 100%;"><strong>Unhandled Promise Rejection:</strong> ' + (e.reason && e.reason.message ? e.reason.message : e.reason) + '</div>';
+      });
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>

@@ -175,29 +175,27 @@ export default function Report() {
   const handleFinalSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch(`/api/issues/${aiData.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          status: 'Reported',
-          note: 'Report finalized and confirmed by citizen.',
-          title: aiData.title,
-          description: aiData.description,
-          severity: Number(aiData.severity),
-          category: aiData.category,
-          recommendedAuthority: aiData.recommendedAuthority
-        })
+      await reportIssue({
+        title: aiData.title,
+        description: aiData.description,
+        severity: Number(aiData.severity),
+        category: aiData.category,
+        recommendedAuthority: aiData.recommendedAuthority,
+        location: { 
+          latitude: Number(lat), 
+          longitude: Number(lng), 
+          address: address 
+        },
+        imageUrl: aiData.imageUrl,
+        complaintLetter: aiData.complaintLetter || '',
+        visionTags: aiData.visionTags || []
       });
 
-      if (response.ok) {
-        triggerToast('Report published.');
-        navigate('/issues');
-      } else {
-        throw new Error('Patch update failure');
-      }
+      triggerToast('Report published.');
+      navigate('/issues');
     } catch (error) {
       console.error(error);
-      navigate('/issues');
+      triggerToast(error.message, 'error');
     }
   };
 

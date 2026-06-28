@@ -2,25 +2,46 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Eye, AlertTriangle, Clock, MapPin } from 'lucide-react';
 
+const MAP_STYLES = {
+  dark: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+  satellite: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+  light: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+  terrain: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png'
+};
+
+const MAP_ATTRIBUTIONS = {
+  dark: '© CartoDB',
+  satellite: '© Esri',
+  light: '© CartoDB',
+  terrain: '© OpenTopoMap'
+};
+
 export default function MapView({ issues, loading, showHeatmap, activeCategory }) {
   const mapRef = useRef(null);
   const navigate = useNavigate();
   const [mapEngine, setMapEngine] = useState('none'); // 'google', 'leaflet', or 'none'
   const [googleMap, setGoogleMap] = useState(null);
   const [leafletMap, setLeafletMap] = useState(null);
-  const [googleMarkers, setGoogleMarkers] = useState([]);
-  const [leafletMarkers, setLeafletMarkers] = useState([]);
-  const [googleHeatmap, setGoogleHeatmap] = useState(null);
-  const [leafletHeatmapCircles, setLeafletHeatmapCircles] = useState([]);
+  const googleMarkersRef = useRef([]);
+  const leafletMarkersRef = useRef([]);
+  const googleHeatmapRef = useRef(null);
+  const leafletHeatmapCirclesRef = useRef([]);
+  const [mapStyle, setMapStyle] = useState(() => localStorage.getItem('mapStyle') || 'dark');
+  const tileLayerRef = useRef(null);
+
+  const switchMapStyle = (styleName) => {
+    setMapStyle(styleName);
+    localStorage.setItem('mapStyle', styleName);
+  };
 
   // Category styling helper
   const getCategoryStyles = (category) => {
     const cat = (category || '').toLowerCase();
-    if (cat === 'pothole') return { color: '#C27B66', label: 'Pothole', bg: 'bg-terracotta' }; // Terracotta
-    if (cat === 'water leak') return { color: '#8C9A84', label: 'Water Leak', bg: 'bg-sage' }; // Sage
-    if (cat === 'streetlight') return { color: '#DCCFC2', label: 'Streetlight', bg: 'bg-clay' }; // Clay
-    if (cat === 'waste') return { color: '#2D3A31', label: 'Waste', bg: 'bg-forest' }; // Forest
-    return { color: '#8C9A84', label: 'Other', bg: 'bg-sage' };
+    if (cat === 'pothole') return { color: '#EF4444', label: 'Pothole', bg: 'bg-terracotta' }; // Red
+    if (cat === 'water leak') return { color: '#3B82F6', label: 'Water Leak', bg: 'bg-sage' }; // Blue
+    if (cat === 'streetlight') return { color: '#F59E0B', label: 'Streetlight', bg: 'bg-clay' }; // Amber
+    if (cat === 'waste') return { color: '#10B981', label: 'Waste', bg: 'bg-forest' }; // Green
+    return { color: '#3B82F6', label: 'Other', bg: 'bg-sage' };
   };
 
   // 1. Script loading and engine selection
@@ -128,26 +149,39 @@ export default function MapView({ issues, loading, showHeatmap, activeCategory }
       position: 'bottomleft'
     }).addTo(map);
 
-    // Determine light/dark tile URLs
-    const isDark = document.documentElement.classList.contains('dark');
-    const tileUrl = isDark 
-      ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-      : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
-
-    L.tileLayer(tileUrl, {
-      maxZoom: 19
+    // Initial tile layer setup based on active style preference
+    const initialUrl = MAP_STYLES[mapStyle] || MAP_STYLES.dark;
+    const initialLayer = L.tileLayer(initialUrl, {
+      maxZoom: mapStyle === 'terrain' ? 18 : 19,
+      attribution: MAP_ATTRIBUTIONS[mapStyle] || '© CartoDB'
     }).addTo(map);
+    tileLayerRef.current = initialLayer;
 
     setLeafletMap(map);
   }, [mapEngine]);
+
+  // Handle Leaflet Map Style switching dynamically
+  useEffect(() => {
+    if (!leafletMap) return;
+    const L = window.L;
+    if (tileLayerRef.current) {
+      leafletMap.removeLayer(tileLayerRef.current);
+    }
+    const nextUrl = MAP_STYLES[mapStyle] || MAP_STYLES.dark;
+    const nextLayer = L.tileLayer(nextUrl, {
+      maxZoom: mapStyle === 'terrain' ? 18 : 19,
+      attribution: MAP_ATTRIBUTIONS[mapStyle] || '© CartoDB'
+    }).addTo(leafletMap);
+    tileLayerRef.current = nextLayer;
+  }, [mapStyle, leafletMap]);
 
   // 4. Update Google Map Markers & Heatmap
   useEffect(() => {
     if (mapEngine !== 'google' || !googleMap) return;
 
     // Clear existing markers
-    googleMarkers.forEach(m => m.setMap(null));
-    if (googleHeatmap) googleHeatmap.setMap(null);
+    googleMarkersRef.current.forEach(m => m.setMap(null));
+    if (googleHeatmapRef.current) googleHeatmapRef.current.setMap(null);
 
     const filteredIssues = issues.filter(issue => {
       const isCatMatch = activeCategory === 'all' || issue.category?.toLowerCase() === activeCategory.toLowerCase();
@@ -193,7 +227,7 @@ export default function MapView({ issues, loading, showHeatmap, activeCategory }
       return marker;
     });
 
-    setGoogleMarkers(markers);
+    googleMarkersRef.current = markers;
 
     // Create Heatmap
     if (showHeatmap) {
@@ -210,7 +244,9 @@ export default function MapView({ issues, loading, showHeatmap, activeCategory }
         radius: 30
       });
 
-      setGoogleHeatmap(heatmap);
+      googleHeatmapRef.current = heatmap;
+    } else {
+      googleHeatmapRef.current = null;
     }
   }, [issues, showHeatmap, activeCategory, googleMap]);
 
@@ -221,8 +257,8 @@ export default function MapView({ issues, loading, showHeatmap, activeCategory }
     const L = window.L;
 
     // Clear existing markers & circles
-    leafletMarkers.forEach(m => m.remove());
-    leafletHeatmapCircles.forEach(c => c.remove());
+    leafletMarkersRef.current.forEach(m => m.remove());
+    leafletHeatmapCirclesRef.current.forEach(c => c.remove());
 
     const filteredIssues = issues.filter(issue => {
       const isCatMatch = activeCategory === 'all' || issue.category?.toLowerCase() === activeCategory.toLowerCase();
@@ -239,7 +275,7 @@ export default function MapView({ issues, loading, showHeatmap, activeCategory }
 
       // Create custom DivIcon for beautiful colored circular marker pins (always visible)
       const customIcon = L.divIcon({
-        html: `<div class="flex h-5 w-5 items-center justify-center rounded-full border-2 border-white bg-[${styles.color}] shadow-md hover:scale-110 transition-transform" style="background-color: ${styles.color};"></div>`,
+        html: `<div class="flex h-5 w-5 items-center justify-center rounded-full border-2 border-white shadow-md hover:scale-110 transition-transform" style="background-color: ${styles.color}; box-shadow: 0 0 10px ${styles.color};"></div>`,
         className: 'custom-map-pin',
         iconSize: [20, 20],
         iconAnchor: [10, 10]
@@ -289,8 +325,8 @@ export default function MapView({ issues, loading, showHeatmap, activeCategory }
       }
     });
 
-    setLeafletMarkers(newMarkers);
-    setLeafletHeatmapCircles(newCircles);
+    leafletMarkersRef.current = newMarkers;
+    leafletHeatmapCirclesRef.current = newCircles;
   }, [issues, showHeatmap, activeCategory, leafletMap]);
 
   // Popup content generator
@@ -302,14 +338,14 @@ export default function MapView({ issues, loading, showHeatmap, activeCategory }
             ${styles.label}
           </span>
           <span class="flex items-center gap-0.5 text-xs text-rose-600 font-bold">
-            <span class="text-xs">🔥</span> Severity ${issue.severity}/10
+            Severity ${issue.severity}/10
           </span>
         </div>
         <h4 class="font-serif font-bold text-base leading-tight text-slate-900 dark:text-white mb-1.5 truncate">${issue.title}</h4>
         <p class="text-xs text-slate-600 dark:text-slate-400 mb-2.5 truncate">${issue.location?.address || ''}</p>
         <div class="flex items-center justify-between text-xs text-slate-500 mb-3 border-t border-slate-100 dark:border-slate-850 pt-2">
-          <span class="flex items-center gap-0.5 font-mono"><span class="text-xs">⏱️</span> ${issue.status}</span>
-          <span class="font-mono">👍 ${issue.upvotes || 0} Upvotes</span>
+          <span class="flex items-center gap-0.5 font-mono">${issue.status}</span>
+          <span class="font-mono">Votes: ${issue.upvotes || 0}</span>
         </div>
         <button id="map-popup-btn-${issue.id}" class="w-full text-center bg-forest hover:bg-terracotta text-white rounded-none py-2 px-3 text-[10px] font-mono font-bold uppercase tracking-widest transition-colors cursor-pointer focus:outline-none">
           View Detailed Report
@@ -394,6 +430,21 @@ export default function MapView({ issues, loading, showHeatmap, activeCategory }
     <div className="relative h-full w-full rounded-[32px] overflow-hidden border border-stone bg-[#FDFDFB] shadow-inner">
       {/* Map Element */}
       <div ref={mapRef} className="h-full w-full z-10" />
+
+      {/* Style Selector Toggle UI */}
+      {mapEngine === 'leaflet' && (
+        <div className="map-style-toggle absolute top-4 right-52 z-20">
+          {Object.keys(MAP_STYLES).map((styleName) => (
+            <button
+              key={styleName}
+              className={`map-style-btn ${mapStyle === styleName ? 'active' : ''}`}
+              onClick={() => switchMapStyle(styleName)}
+            >
+              {styleName}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Map Control Badge showing status (Botanical style) */}
       <div className="absolute bottom-4 right-4 z-20 flex items-center gap-1.5 rounded-full bg-forest/90 text-white backdrop-blur border border-stone/30 px-4 py-2 text-xs font-mono uppercase tracking-widest shadow-soft">

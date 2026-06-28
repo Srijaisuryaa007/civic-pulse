@@ -12,7 +12,7 @@ export default function Profile() {
 
   useEffect(() => {
     if (user?.uid) {
-      const filtered = issues.filter(i => i.reporter?.uid === user.uid);
+      const filtered = issues.filter(i => i.authorId === user.uid);
       setMyIssues(filtered);
 
       const ledger = [];

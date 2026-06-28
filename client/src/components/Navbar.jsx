@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { LogOut, User, MapPin, List, BarChart3, Leaf } from 'lucide-react';
 
 export default function Navbar() {
-  const { user, login, logout } = useAuth();
+  const { user, logout } = useAuth();
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -60,7 +60,7 @@ export default function Navbar() {
                   to="/profile"
                   className="flex items-center gap-1.5 border border-[#8C9A84] px-4 py-1.5 text-xs sm:text-sm font-mono font-bold uppercase tracking-wider text-[#8C9A84] rounded-full hover:bg-sage/10 transition-colors"
                 >
-                  🏆 {user.points || 0} XP
+                  {user.points || 0} XP
                 </Link>
 
                 {/* Profile Pic Menu (Rounded full) */}
@@ -115,12 +115,12 @@ export default function Navbar() {
                 </div>
               </div>
             ) : (
-              <button
-                onClick={login}
+              <Link
+                to="/login"
                 className="px-6 py-2.5 text-xs sm:text-sm font-mono font-bold uppercase tracking-wider bg-forest text-white hover:bg-terracotta rounded-full active:scale-95 transition-all duration-300 shadow-soft hover:shadow-soft-md"
               >
                 Sign In
-              </button>
+              </Link>
             )}
           </div>
         </div>

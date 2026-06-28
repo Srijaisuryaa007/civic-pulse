@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useIssues } from '../context/IssueContext';
 import { useAuth } from '../context/AuthContext';
 import { ThumbsUp, CheckCircle, MapPin, Send, Share2, ChevronLeft, Calendar, FileText, AlertTriangle } from 'lucide-react';
+import { onSnapshot, doc } from 'firebase/firestore';
+import { db } from '../firebase';
 
 export default function IssueDetail() {
   const { id } = useParams();
-  const { issues, upvoteIssue, verifyIssue, updateIssueStatus, addComment, triggerToast } = useIssues();
+  const navigate = useNavigate();
+  const { upvoteIssue, verifyIssue, updateIssueStatus, deleteIssue, addComment, triggerToast } = useIssues();
   const { user } = useAuth();
   
   const [issue, setIssue] = useState(null);
@@ -18,24 +21,34 @@ export default function IssueDetail() {
   const [simStatus, setSimStatus] = useState('In Progress');
   const [simNote, setSimNote] = useState('');
 
-  useEffect(() => {
-    loadIssueData();
-  }, [id, issues]);
+  const [userState, setUserState] = useState({
+    isAuthor: false,
+    hasVoted: false,
+    hasVerified: false,
+    isInspector: false
+  });
 
-  const loadIssueData = async () => {
-    try {
-      const response = await fetch(`/api/issues/${id}`);
-      if (response.ok) {
-        const data = await response.json();
-        setIssue(data);
+  useEffect(() => {
+    const unsub = onSnapshot(doc(db, 'issues', id), (snap) => {
+      if (!snap.exists()) {
+        setIssue(null);
+        setLoadingIssue(false);
+        return;
       }
-    } catch (e) {
-      const local = issues.find(i => i.id === id);
-      if (local) setIssue(local);
-    } finally {
+      const data = { id: snap.id, ...snap.data() };
+      setIssue(data);
+      if (user) {
+        setUserState({
+          isAuthor: data.authorId === user.uid,
+          hasVoted: data.votedBy?.includes(user.uid) ?? false,
+          hasVerified: data.verifiedBy?.includes(user.uid) ?? false,
+          isInspector: user.role === 'inspector' || user.role === 'admin'
+        });
+      }
       setLoadingIssue(false);
-    }
-  };
+    });
+    return () => unsub();
+  }, [id, user]);
 
   const handlePostComment = async (e) => {
     e.preventDefault();
@@ -46,16 +59,8 @@ export default function IssueDetail() {
       return;
     }
 
-    const newComment = await addComment(id, commentText);
-    if (newComment) {
-      setIssue(prev => ({
-        ...prev,
-        comments: [...(prev.comments || []), newComment],
-        commentsCount: (prev.commentsCount || 0) + 1
-      }));
-      setCommentText('');
-      loadIssueData();
-    }
+    await addComment(id, commentText);
+    setCommentText('');
   };
 
   const handleSimulateStatus = async (e) => {
@@ -63,7 +68,6 @@ export default function IssueDetail() {
     await updateIssueStatus(id, simStatus, simNote || `Status updated to ${simStatus} by simulated Municipal Authority Inspector.`);
     setSimulationOpen(false);
     setSimNote('');
-    loadIssueData();
   };
 
   const shareIssue = () => {
@@ -88,7 +92,7 @@ export default function IssueDetail() {
         <h3 className="font-serif text-lg font-bold text-forest">REPORT FILE OUT OF SCOPE</h3>
         <p className="text-xs font-body text-neutral-500 mt-1">The referenced file is missing or has been permanently resolved.</p>
         <Link to="/issues" className="mt-5 inline-block text-xs font-mono font-bold uppercase tracking-widest text-terracotta hover:underline">
-          &larr; Back to Catalog
+          Back to Catalog
         </Link>
       </div>
     );
@@ -110,11 +114,9 @@ export default function IssueDetail() {
   };
 
   const currentStepIdx = getStepIndex(issue.status);
-  const userHasVerified = issue.verifiedBy?.includes(user?.uid);
-  const isReporter = issue.reporter?.uid === user?.uid;
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8 bg-paper">
+    <div className="issue-detail-main mx-auto max-w-5xl bg-paper">
       
       {/* Back button */}
       <Link to="/issues" className="flex items-center gap-1 text-xs font-mono font-bold uppercase tracking-widest text-neutral-500 hover:text-terracotta mb-6 transition-colors">
@@ -133,7 +135,7 @@ export default function IssueDetail() {
             <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(140,154,132,0.02)_1px,transparent_1px)] [background-size:20px_20px] pointer-events-none" />
 
             <div className="relative z-10 flex items-center justify-between gap-4 flex-wrap mb-4 border-b border-stone pb-3">
-              <span className="px-3 py-1 border border-stone text-sm font-mono font-bold uppercase tracking-widest text-sage rounded-full bg-paper">
+              <span className="category-tag px-3 py-1 border border-stone rounded-full bg-paper text-sage">
                 Category: {issue.category}
               </span>
 
@@ -147,36 +149,52 @@ export default function IssueDetail() {
                 </button>
 
                  {/* Simulation Inspector Toggle */}
-                <button
-                  onClick={() => setSimulationOpen(!simulationOpen)}
-                  className="px-4 py-1.5 border border-terracotta bg-transparent text-terracotta hover:bg-terracotta hover:text-white text-sm font-mono font-bold uppercase tracking-widest rounded-full transition-colors"
-                >
-                  ⚡ Inspector Tool
-                </button>
+                {userState.isInspector && (
+                  <button
+                    onClick={() => setSimulationOpen(!simulationOpen)}
+                    className="px-4 py-1.5 border border-terracotta bg-transparent text-terracotta hover:bg-terracotta hover:text-white text-sm font-mono font-bold uppercase tracking-widest rounded-full transition-colors"
+                  >
+                    Inspector Tool
+                  </button>
+                )}
               </div>
             </div>
 
-            <h1 className="relative z-10 font-serif text-3xl sm:text-4xl font-bold text-forest leading-tight">
+            <h1 className="issue-title">
               {issue.title}
             </h1>
 
-            <div className="relative z-10 flex items-center gap-1.5 text-xs font-mono uppercase tracking-wider text-neutral-500 mt-2.5 ml-1">
+            <div className="location-text relative z-10 flex items-center gap-1.5 mt-2.5 ml-1">
               <MapPin className="h-3.5 w-3.5 text-terracotta shrink-0" />
-              <span>Location: {issue.location?.address}</span>
+              <span>LOCATION: {issue.location?.address}</span>
             </div>
 
-            <div className="border-t border-stone pt-4 mt-6 flex items-center justify-between text-xs font-mono uppercase tracking-wider text-neutral-555 ml-1">
+            <div className="border-t border-stone pt-4 mt-6 flex items-center justify-between ml-1">
               <div className="flex items-center gap-2">
-                <div className="h-7 w-7 border border-stone text-forest bg-neutral-50 font-mono font-bold flex items-center justify-center text-xs uppercase rounded-full shrink-0">
-                  {issue.reporter?.displayName?.substring(0, 2).toUpperCase()}
-                </div>
-                <div>
-                  <p className="font-bold text-forest">{issue.reporter?.displayName}</p>
-                  <p className="text-xs text-neutral-450">Filer</p>
-                </div>
+                {userState.isAuthor ? (
+                  <>
+                    <div className="h-7 w-7 border border-stone text-forest bg-neutral-50 font-mono font-bold flex items-center justify-center text-xs uppercase rounded-full shrink-0">
+                      {issue.authorName?.substring(0, 2).toUpperCase()}
+                    </div>
+                    <div>
+                      <p className="filer-name">{issue.authorName}</p>
+                      <p className="filer-role">FILER</p>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="h-7 w-7 border border-stone text-forest bg-neutral-50 font-mono font-bold flex items-center justify-center text-xs uppercase rounded-full shrink-0">
+                      CR
+                    </div>
+                    <div>
+                      <p className="filer-name">Citizen Reporter</p>
+                      <p className="filer-role">Anonymous</p>
+                    </div>
+                  </>
+                )}
               </div>
-              <span className="flex items-center gap-1 font-bold">
-                <Calendar className="h-3.5 w-3.5 text-sage" /> Filed {new Date(issue.createdAt).toLocaleDateString()}
+              <span className="filed-date flex items-center gap-1">
+                <Calendar className="h-3.5 w-3.5 text-sage" /> FILED {new Date(issue.createdAt).toLocaleDateString()}
               </span>
             </div>
 
@@ -184,7 +202,7 @@ export default function IssueDetail() {
             {simulationOpen && (
               <form onSubmit={handleSimulateStatus} className="mt-6 p-4 border border-stone rounded-[20px] bg-paper text-sm text-forest space-y-3 animate-slideUp relative z-20 shadow-soft">
                 <div className="flex justify-between items-center border-b border-stone pb-1.5">
-                  <h4 className="font-mono font-bold uppercase tracking-widest text-terracotta text-sm">⚡ Simulated Inspector Dashboard</h4>
+                  <h4 className="font-mono font-bold uppercase tracking-widest text-terracotta text-sm">Simulated Inspector Dashboard</h4>
                   <button type="button" onClick={() => setSimulationOpen(false)} className="text-neutral-400 hover:text-forest">✕</button>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 font-mono">
@@ -218,22 +236,37 @@ export default function IssueDetail() {
               </form>
             )}
 
-            {/* Editorial drop-cap narrative */}
+            {/* Case narrative */}
             <div className="mt-6 border-t border-stone pt-5">
-              <h3 className="font-mono text-sm font-bold uppercase tracking-widest text-neutral-400 mb-3 ml-1">Case Narrative</h3>
-              <p className="text-justify text-base text-forest leading-relaxed font-body drop-cap whitespace-pre-wrap">
-                {issue.description}
-              </p>
+              <h3 className="section-label ml-1">Case Narrative</h3>
+              <div className="case-narrative whitespace-pre-wrap">
+                <p>{issue.description}</p>
+              </div>
             </div>
 
-            <div className="py-6 text-center font-serif text-lg text-neutral-350 tracking-[1em]">
-              &#x2727; &#x2727; &#x2727;
-            </div>
+            <div className="section-divider"></div>
+
+            {/* Author Controls */}
+            {userState.isAuthor && (
+              <div className="mt-4 flex items-center gap-3 ml-1 border-t border-stone pt-4">
+                <button className="px-4 py-1.5 border border-stone bg-paper text-forest hover:bg-neutral-50 text-xs font-mono font-bold uppercase tracking-widest rounded-full transition-colors" onClick={() => triggerToast("Edit mode coming soon!", "warning")}>
+                  Edit Report
+                </button>
+                <button className="px-4 py-1.5 bg-terracotta hover:bg-red-700 text-white text-xs font-mono font-bold uppercase tracking-widest rounded-full shadow-soft transition-colors" onClick={async () => {
+                  if (window.confirm("Are you sure you want to delete this report?")) {
+                    await deleteIssue(issue.id);
+                    navigate('/issues');
+                  }
+                }}>
+                  Delete
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Stepper Timeline (Pill design blocks) */}
           <div className="bg-paper border border-stone rounded-[32px] p-6 shadow-soft relative">
-            <h3 className="font-serif text-lg font-bold text-forest border-b border-stone pb-3 mb-5">
+            <h3 className="correspondence-title border-b border-stone pb-3 mb-5">
               Resolution Progress
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-4 gap-3.5 font-mono text-sm uppercase tracking-wider">
@@ -251,8 +284,8 @@ export default function IssueDetail() {
                     }`}
                   >
                     <div>
-                      <p className="font-bold">{step.label}</p>
-                      <p className={`text-xs mt-1.5 leading-normal ${isCompleted ? 'text-neutral-350' : 'text-neutral-400'}`}>
+                      <p className="step-label">{step.label}</p>
+                      <p className={`step-sublabel ${isCompleted ? 'text-neutral-350' : 'text-neutral-400'}`}>
                         {isActive && step.key === 'Verified' && issue.status === 'Reported'
                           ? `Votes: ${issue.verifications || 0}/3`
                           : step.description}
@@ -266,16 +299,16 @@ export default function IssueDetail() {
 
             {/* Audit logs history */}
             <div className="border-t border-stone mt-6 pt-5">
-              <h4 className="text-sm font-mono font-bold uppercase tracking-widest text-neutral-400 mb-3.5 ml-1">Filing History Log</h4>
-              <div className="space-y-3 font-mono text-base ml-1">
+              <h4 className="history-label ml-1">Filing History Log</h4>
+              <div className="space-y-3 ml-1">
                 {issue.history?.map((hist, idx) => (
-                  <div key={idx} className="flex gap-2.5 text-sm">
-                    <div className="h-1.5 w-1.5 rounded-full bg-sage mt-1.5 shrink-0" />
+                  <div key={idx} className="flex gap-2.5">
+                    <div className="h-1.5 w-1.5 rounded-full bg-sage mt-2 shrink-0" />
                     <div>
-                      <p className="font-bold text-forest">
-                        {hist.status} - <span className="font-normal text-neutral-450">{new Date(hist.timestamp).toLocaleString()}</span>
+                      <p className="history-entry-title">
+                        {hist.status} <span className="history-entry-date">{new Date(hist.timestamp).toLocaleString()}</span>
                       </p>
-                      <p className="text-neutral-500 mt-0.5 leading-relaxed font-body">{hist.note}</p>
+                      <p className="history-entry-body">{hist.note}</p>
                     </div>
                   </div>
                 ))}
@@ -285,7 +318,7 @@ export default function IssueDetail() {
 
           {/* Comments section */}
           <div className="bg-paper border border-stone rounded-[32px] p-6 space-y-5 shadow-soft">
-            <h3 className="font-serif text-lg font-bold text-forest border-b border-stone pb-3 mb-4">
+            <h3 className="correspondence-title border-b border-stone pb-3 mb-4">
               Community Correspondence ({issue.commentsCount || 0})
             </h3>
 
@@ -339,60 +372,63 @@ export default function IssueDetail() {
         {/* Gamification Actions and AI Insights Sidebar */}
         <div className="space-y-6">
           {/* Action Board (Pill outline shapes) */}
-          <div className="bg-paper border border-stone rounded-[32px] p-5 text-center space-y-4 relative shadow-soft">
+          <div className="sidebar-panel bg-paper border border-stone rounded-[32px] text-center space-y-4 relative shadow-soft">
             <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(140,154,132,0.02)_1px,transparent_1px)] [background-size:16px_16px] pointer-events-none" />
-            <h3 className="font-mono text-sm font-bold uppercase tracking-widest text-neutral-450 relative z-10">Citizen Ballot Board</h3>
+            <h3 className="sidebar-panel-title relative z-10">Citizen Ballot Board</h3>
             
             <div className="grid grid-cols-2 gap-3.5 relative z-10">
               {/* Upvotes */}
               <div className="p-3 border border-stone bg-transparent rounded-2xl shadow-soft">
-                <p className="text-2xl font-serif font-black text-forest">{issue.upvotes || 0}</p>
-                <p className="text-xs font-mono uppercase tracking-widest text-neutral-450 mt-1">Votes</p>
+                <p className="ballot-count">{issue.upvotes || 0}</p>
+                <p className="ballot-count-label mt-1">Votes</p>
                 <button
                   onClick={() => upvoteIssue(issue.id)}
+                  disabled={userState.hasVoted || userState.isAuthor}
                   className={`mt-3 w-full border py-1.5 px-3 text-sm font-mono font-bold uppercase tracking-widest rounded-full transition-all ${
-                    issue.upvotedBy?.includes(user?.uid)
+                    userState.hasVoted
                       ? 'bg-forest text-white border-transparent'
+                      : userState.isAuthor
+                      ? 'border-stone text-neutral-450 bg-neutral-100/50 cursor-not-allowed'
                       : 'bg-paper hover:bg-neutral-55 border-stone text-forest shadow-soft'
                   }`}
                 >
                   <ThumbsUp className="h-3 w-3 inline mr-1" />
-                  <span>{issue.upvotedBy?.includes(user?.uid) ? 'Voted' : 'Vote'}</span>
+                  <span>{userState.hasVoted ? 'Voted' : userState.isAuthor ? 'Own' : 'Vote'}</span>
                 </button>
               </div>
  
               {/* Verifications */}
               <div className="p-3 border border-stone bg-transparent rounded-2xl shadow-soft">
-                <p className="text-2xl font-serif font-black text-forest">{issue.verifications || 0}/3</p>
-                <p className="text-xs font-mono uppercase tracking-widest text-neutral-450 mt-1">Verifies</p>
+                <p className="ballot-count">{issue.verifications || 0}/3</p>
+                <p className="ballot-count-label mt-1">Verifies</p>
                 
                 <button
                   onClick={() => verifyIssue(issue.id)}
-                  disabled={userHasVerified || isReporter || issue.status !== 'Reported'}
+                  disabled={userState.hasVerified || userState.isAuthor || issue.status !== 'Reported'}
                   className={`mt-3 w-full border py-1.5 px-3 text-sm font-mono font-bold uppercase tracking-widest rounded-full transition-all ${
-                    userHasVerified 
+                    userState.hasVerified 
                       ? 'bg-terracotta border-transparent text-white disabled:opacity-100'
-                      : isReporter
+                      : userState.isAuthor
                       ? 'border-stone text-neutral-450 bg-neutral-100/50 cursor-not-allowed'
                       : 'bg-paper hover:bg-neutral-55 border-stone text-forest shadow-soft'
                   }`}
                 >
                   <CheckCircle className="h-3 w-3 inline mr-1" />
-                  <span>{userHasVerified ? 'Verified' : isReporter ? 'Own' : 'Verify'}</span>
+                  <span>{userState.hasVerified ? 'Verified' : userState.isAuthor ? 'Own' : 'Verify'}</span>
                 </button>
               </div>
             </div>
             
             {issue.status === 'Reported' && (
-              <p className="relative z-10 text-sm font-mono text-neutral-450 leading-relaxed uppercase tracking-wider">
-                Verifications award **+5 XP**. 3 verifications promote cards to **Verified**.
+              <p className="verification-note relative z-10">
+                <span>Verifications award </span><strong>+5 XP</strong>. 3 verifications promote cards to <strong>Verified</strong>.
               </p>
             )}
           </div>
 
           {/* AI Analysis Stats Sidebar (Roman Arch Thumbnail) */}
-          <div className="bg-paper border border-stone rounded-[32px] p-5 space-y-4 shadow-soft">
-            <h3 className="font-mono text-sm font-bold uppercase tracking-widest text-neutral-450 ml-1">Metadata Indices</h3>
+          <div className="sidebar-panel bg-paper border border-stone rounded-[32px] space-y-4 shadow-soft">
+            <h3 className="sidebar-panel-title ml-1">Metadata Indices</h3>
             
             <div className="space-y-3.5 font-mono text-sm">
               <div className="aspect-video w-full border border-stone overflow-hidden relative bg-neutral-100 arch-image shadow-soft">
@@ -400,23 +436,23 @@ export default function IssueDetail() {
                 <div className="absolute inset-0 halftone-placeholder pointer-events-none opacity-5" />
               </div>
 
-              <div className="flex justify-between items-center py-2.5 border-b border-stone ml-1">
-                <span className="text-neutral-450 text-sm font-bold uppercase tracking-wider">Severity Class</span>
-                <span className="font-bold text-terracotta text-sm">
+              <div className="meta-row flex justify-between items-center ml-1">
+                <span className="meta-label">Severity Class</span>
+                <span className="severity-value text-terracotta">
                   SEV {issue.severity}/10 &bull; {issue.urgencyLevel || 'Moderate'}
                 </span>
               </div>
 
-              <div className="flex justify-between items-center py-2.5 border-b border-stone ml-1">
-                <span className="text-neutral-450 text-sm font-bold uppercase tracking-wider">Fix Window</span>
-                <span className="font-bold text-forest text-sm">
+              <div className="meta-row flex justify-between items-center ml-1">
+                <span className="meta-label">Fix Window</span>
+                <span className="fix-window-value">
                   {issue.estimatedResolutionDays || 5} days
                 </span>
               </div>
 
-              <div className="flex flex-col gap-1 py-2 ml-1">
-                <span className="text-neutral-450 text-sm font-bold uppercase tracking-wider">Agency Department</span>
-                <span className="font-bold text-forest leading-relaxed text-base">
+              <div className="meta-row flex flex-col gap-1 ml-1">
+                <span className="meta-label">Agency Department</span>
+                <span className="agency-name">
                   {issue.recommendedAuthority}
                 </span>
               </div>
@@ -425,22 +461,22 @@ export default function IssueDetail() {
 
           {/* Copyable Letter Card (Highly rounded paper card) */}
           {issue.complaintLetter && (
-            <div className="bg-paper border border-stone rounded-[32px] p-5 space-y-3 relative shadow-soft overflow-hidden">
+            <div className="sidebar-panel bg-paper border border-stone rounded-[32px] space-y-3 relative shadow-soft overflow-hidden">
               <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(140,154,132,0.02)_1px,transparent_1px)] [background-size:16px_16px] pointer-events-none" />
               
               <div className="relative z-10 flex justify-between items-center ml-1">
-                <h4 className="font-mono text-sm font-bold uppercase tracking-widest text-neutral-450">Filing Letter</h4>
+                <h4 className="filing-letter-heading">Filing Letter</h4>
                 <button
                   onClick={() => {
                     navigator.clipboard.writeText(issue.complaintLetter);
                     triggerToast("Complaint letter copied.");
                   }}
-                  className="flex items-center gap-0.5 text-sm font-mono font-bold uppercase tracking-widest text-terracotta hover:underline"
+                  className="copy-btn flex items-center gap-0.5 text-terracotta hover:underline"
                 >
                   <FileText className="h-3 w-3 inline" /> Copy
                 </button>
               </div>
-              <div className="relative z-10 rounded-2xl border border-stone bg-[#FAF9F6] p-3.5 max-h-48 overflow-y-auto text-sm sm:text-base font-mono text-forest leading-relaxed whitespace-pre-wrap">
+              <div className="filing-letter-body relative z-10 rounded-2xl border border-stone bg-[#FAF9F6] p-3.5 max-h-48 overflow-y-auto whitespace-pre-wrap">
                 {issue.complaintLetter}
               </div>
             </div>

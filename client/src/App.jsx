@@ -11,6 +11,8 @@ import Issues from './pages/Issues';
 import IssueDetail from './pages/IssueDetail';
 import Dashboard from './pages/Dashboard';
 import Profile from './pages/Profile';
+import Login from './pages/Login';
+import { ProtectedRoute } from './components/ProtectedRoute';
 import { Award, UserCheck, AlertTriangle } from 'lucide-react';
 
 function RootRedirect() {
@@ -59,12 +61,13 @@ function AppContent() {
         <main className="flex-1 w-full relative z-10">
           <Routes>
             <Route path="/" element={<RootRedirect />} />
-            <Route path="/app" element={<Home />} />
-            <Route path="/report" element={<Report />} />
-            <Route path="/issues" element={<Issues />} />
-            <Route path="/issue/:id" element={<IssueDetail />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/profile" element={<Profile />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/app" element={<ProtectedRoute><Home /></ProtectedRoute>} />
+            <Route path="/report" element={<ProtectedRoute><Report /></ProtectedRoute>} />
+            <Route path="/issues" element={<ProtectedRoute><Issues /></ProtectedRoute>} />
+            <Route path="/issue/:id" element={<ProtectedRoute><IssueDetail /></ProtectedRoute>} />
+            <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
             {/* Fallback to app */}
             <Route path="*" element={<Navigate to="/app" replace />} />
           </Routes>
