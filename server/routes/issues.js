@@ -154,14 +154,14 @@ router.post('/', async (req, res) => {
       recommendedAuthority: aiAnalysis.recommendedAuthority || 'Local Municipal Authority',
       complaintLetter: aiAnalysis.complaintLetter || '',
       isDuplicate: aiAnalysis.isDuplicate || false,
-      similarIssues: aiAnalysis.similarIssueIds || [],
+      similarIssues: (aiAnalysis.similarIssueIds || []).filter(Boolean),
       location: {
         address,
         latitude: lat1,
         longitude: lon1
       },
       imageUrl,
-      visionTags,
+      visionTags: (visionTags || []).filter(Boolean),
       status: 'Reported',
       upvotes: 0,
       upvotedBy: [],
