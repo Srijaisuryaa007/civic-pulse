@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LogOut, User, MapPin, List, BarChart3, Leaf } from 'lucide-react';
+import { IconLogout, IconUser, IconMapPin, IconList, IconChartBar, IconLeaf } from '@tabler/icons-react';
 
 export default function Navbar() {
   const { user, logout } = useAuth();
@@ -9,9 +9,9 @@ export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
 
   const navItems = [
-    { name: 'Map View', path: '/app', icon: MapPin },
-    { name: 'Issue Feed', path: '/issues', icon: List },
-    { name: 'Dashboard', path: '/dashboard', icon: BarChart3 },
+    { name: 'Map View', path: '/map', icon: IconMapPin },
+    { name: 'Issue Feed', path: '/issues', icon: IconList },
+    { name: 'Dashboard', path: '/dashboard', icon: IconChartBar },
   ];
 
   return (
@@ -23,7 +23,7 @@ export default function Navbar() {
           <div className="flex items-center gap-2">
             <a href="/" className="flex items-center gap-2 group">
               <div className="flex h-9 w-9 items-center justify-center rounded-full bg-sage/10 text-sage hover:scale-105 transition-transform duration-500">
-                <Leaf className="h-5 w-5 stroke-[1.5]" />
+                <IconLeaf className="h-5 w-5 stroke-[1.5]" />
               </div>
               <span className="font-serif text-xl sm:text-2xl font-bold tracking-tight text-forest">
                 Civic<span className="italic font-normal text-sage">Pulse</span>
@@ -96,7 +96,7 @@ export default function Navbar() {
                         onClick={() => setMenuOpen(false)}
                         className="flex w-full items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-mono uppercase tracking-wider text-[#2D3A31] hover:bg-neutral-50 transition-colors"
                       >
-                        <User className="h-3.5 w-3.5" />
+                        <IconUser className="h-3.5 w-3.5" />
                         My Profile
                       </Link>
 
@@ -107,7 +107,7 @@ export default function Navbar() {
                         }}
                         className="flex w-full items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-mono uppercase tracking-wider text-terracotta hover:bg-neutral-50 transition-colors"
                       >
-                        <LogOut className="h-3.5 w-3.5" />
+                        <IconLogout className="h-3.5 w-3.5" />
                         Logout
                       </button>
                     </div>
