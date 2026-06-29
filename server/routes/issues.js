@@ -27,20 +27,7 @@ const saveFileLocally = (file) => {
   return `/uploads/${filename}`;
 };
 
-// Helper to upload file to Firebase Storage
-const uploadToFirebaseStorage = async (file) => {
-  const bucket = admin.storage().bucket();
-  const fileExt = path.extname(file.originalname) || '.jpg';
-  const filename = `issues/${Date.now()}-${Math.random().toString(36).substring(2, 10)}${fileExt}`;
-  const fileRef = bucket.file(filename);
-
-  await fileRef.save(file.buffer, {
-    metadata: { contentType: file.mimetype },
-    public: true
-  });
-
-  return fileRef.publicUrl();
-};
+// Removed Firebase Storage helper
 
 // Helper to award gamification points & badges to users
 const updateUserPoints = async (userId, points, activity, userDetails = {}) => {
@@ -98,12 +85,12 @@ const updateUserPoints = async (userId, points, activity, userDetails = {}) => {
  * @route POST /api/issues
  * @desc Create a new issue (Upload image, run Vision + Gemini analysis, run duplicate check)
  */
-router.post('/', upload.single('image'), async (req, res) => {
+router.post('/', async (req, res) => {
   try {
-    const { address, latitude, longitude, userId, userName, userPhoto } = req.body;
+    const { imageUrl, address, latitude, longitude, userId, userName, userPhoto } = req.body;
     
-    if (!req.file) {
-      return res.status(400).json({ error: 'Image file is required' });
+    if (!imageUrl) {
+      return res.status(400).json({ error: 'Image URL is required' });
     }
     if (!address || !latitude || !longitude) {
       return res.status(400).json({ error: 'Location information (address, lat, lng) is required' });
@@ -111,16 +98,17 @@ router.post('/', upload.single('image'), async (req, res) => {
 
     console.log(`📥 Received new issue report. Location: ${address}`);
 
-    // 1. Save Image
-    let imageUrl = '';
-    if (isSimulationMode) {
-      imageUrl = saveFileLocally(req.file);
-    } else {
-      imageUrl = await uploadToFirebaseStorage(req.file);
+    // Fetch the image buffer from Cloudinary URL so Vision API can process it
+    console.log(`Fetching image from Cloudinary for Vision API analysis...`);
+    const imageResponse = await fetch(imageUrl);
+    if (!imageResponse.ok) {
+      throw new Error('Failed to download image for analysis.');
     }
+    const arrayBuffer = await imageResponse.arrayBuffer();
+    const imageBuffer = Buffer.from(arrayBuffer);
 
     // 2. Vision API analysis
-    const visionTags = await analyzeImageWithVision(req.file.buffer, req.file.originalname);
+    const visionTags = await analyzeImageWithVision(imageBuffer, 'cloudinary-upload.jpg');
 
     // 3. Get existing reports nearby (within ~2km) for duplicate check
     // In simulation mode or simple firestore, we fetch recent issues and compute distance

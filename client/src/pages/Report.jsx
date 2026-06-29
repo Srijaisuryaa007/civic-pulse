@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useIssues } from '../context/IssueContext';
 import { useAuth } from '../context/AuthContext';
+import { uploadImage } from '../services/uploadImage';
 import { Upload, MapPin, Compass, AlertCircle, Copy, Check, ChevronRight, RefreshCw, Send, Sparkles } from 'lucide-react';
 
 export default function Report() {
@@ -13,6 +14,8 @@ export default function Report() {
   const [selectedFile, setSelectedFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState('');
 
   // Location states
   const [lat, setLat] = useState('');
@@ -129,20 +132,26 @@ export default function Report() {
 
     setStep(2);
     setAiAnalyzing(true);
-
-    const formData = new FormData();
-    formData.append('image', selectedFile);
-    formData.append('address', address);
-    formData.append('latitude', lat);
-    formData.append('longitude', lng);
-    formData.append('userId', user.uid);
-    formData.append('userName', user.displayName);
-    formData.append('userPhoto', user.photoURL);
+    setUploading(true);
+    setUploadError('');
 
     try {
+      const url = await uploadImage(selectedFile);
+      
+      const payload = {
+        imageUrl: url,
+        address,
+        latitude: lat,
+        longitude: lng,
+        userId: user.uid,
+        userName: user.displayName,
+        userPhoto: user.photoURL
+      };
+
       const response = await fetch('/api/issues', {
         method: 'POST',
-        body: formData
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
       });
 
       if (!response.ok) {
@@ -158,6 +167,7 @@ export default function Report() {
       triggerToast(err.message || 'Error executing image classification', 'error');
       setStep(1);
     } finally {
+      setUploading(false);
       setAiAnalyzing(false);
     }
   };
@@ -362,11 +372,17 @@ export default function Report() {
               <div className="absolute inset-0 halftone-placeholder pointer-events-none opacity-5 rounded-full" />
             </div>
             <h3 className="font-serif text-2xl font-bold text-forest">
-              Executing AI Analytics...
+              {uploading ? 'Uploading Evidence...' : 'Executing AI Analytics...'}
             </h3>
-            <p className="text-xs font-mono uppercase tracking-widest text-neutral-450 mt-2 max-w-sm mx-auto leading-relaxed">
-              Google Vision extraction & Gemini 1.5 parsing active.
-            </p>
+            {uploadError ? (
+              <p className="text-xs font-mono uppercase tracking-widest text-terracotta mt-2 max-w-sm mx-auto leading-relaxed">
+                {uploadError}
+              </p>
+            ) : (
+              <p className="text-xs font-mono uppercase tracking-widest text-neutral-450 mt-2 max-w-sm mx-auto leading-relaxed">
+                {uploading ? 'Transferring file to secure vault.' : 'Google Vision extraction & Gemini 1.5 parsing active.'}
+              </p>
+            )}
           </div>
 
           {/* Skeletons layout */}

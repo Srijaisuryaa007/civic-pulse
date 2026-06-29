@@ -2,7 +2,8 @@ import { initializeApp } from 'firebase/app';
 import { getAnalytics, isSupported } from "firebase/analytics";
 import { getAuth, GoogleAuthProvider, browserLocalPersistence, setPersistence } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
-import { getStorage } from 'firebase/storage';
+// Storage handled by Cloudinary
+// import { getStorage } from 'firebase/storage';
 
 const firebaseConfig = {
   apiKey: "AIzaSyCDKBduHkCwe5ybirE6gcBAqTn_UIqjuOU",
@@ -17,7 +18,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
-export const storage = getStorage(app);
+// export const storage = getStorage(app);
 export const googleProvider = new GoogleAuthProvider();
 
 export let analytics = null;
