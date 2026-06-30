@@ -227,7 +227,7 @@ router.get('/nearby', async (req, res) => {
     const issuesSnap = await db.collection('issues').get();
     const list = [];
     issuesSnap.forEach(doc => {
-      list.push(doc.data());
+      list.push({ id: doc.id, ...doc.data() });
     });
 
     const R = 6371; // Earth radius in km
@@ -284,7 +284,7 @@ router.get('/', async (req, res) => {
     let issues = [];
     
     snapshot.forEach(doc => {
-      issues.push(doc.data());
+      issues.push({ id: doc.id, ...doc.data() });
     });
 
     // Apply category filter
@@ -372,52 +372,12 @@ router.get('/:id', async (req, res) => {
     comments.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
 
     res.json({
+      id: doc.id,
       ...doc.data(),
       comments
     });
   } catch (error) {
     console.error(`🔴 Error fetching issue detail: ${error.message}`);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-/**
- * @route POST /api/issues/:id/comments
- * @desc File a comment under an issue
- */
-router.post('/:id/comments', async (req, res) => {
-  try {
-    const { userId, userName, userPhoto, text } = req.body;
-    const issueId = req.params.id;
-
-    if (!userId || !text) {
-      return res.status(400).json({ error: 'User ID and comment text are required' });
-    }
-
-    const newComment = {
-      id: `${issueId}-comment-${Date.now()}`,
-      issueId,
-      userId,
-      userName: userName || 'Citizen Hero',
-      userPhoto: userPhoto || '',
-      text,
-      createdAt: new Date().toISOString()
-    };
-
-    // Save to Firestore
-    await db.collection('comments').doc(newComment.id).set(newComment);
-
-    // Update issue document's updatedAt timestamp
-    await db.collection('issues').doc(issueId).update({
-      updatedAt: new Date().toISOString()
-    });
-
-    // Award Gamification Points for commenting (+2 XP)
-    await updateUserPoints(userId, 2, 'comment', { displayName: userName, photoURL: userPhoto });
-
-    res.status(201).json(newComment);
-  } catch (error) {
-    console.error(`🔴 Error posting comment: ${error.message}`);
     res.status(500).json({ error: error.message });
   }
 });
