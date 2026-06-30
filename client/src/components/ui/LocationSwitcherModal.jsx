@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { Globe, X, CheckCircle2 } from 'lucide-react';
+import { Globe, X, CheckCircle2, MapPin } from 'lucide-react';
 
 export default function LocationSwitcherModal({ isOpen, onClose }) {
   const { user, completeOnboarding } = useAuth();
@@ -74,6 +74,51 @@ export default function LocationSwitcherModal({ isOpen, onClose }) {
     const lat = Number(place.lat);
     const lng = Number(place.lon);
     setCoordinates({ lat, lng });
+  };
+
+  const handleAutoLocate = () => {
+    if (!navigator.geolocation) {
+      alert("Geolocation is not supported by your browser.");
+      return;
+    }
+    setSearching(true);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        try {
+          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&addressdetails=1`);
+          if (res.ok) {
+            const data = await res.json();
+            const addr = data.address || {};
+            
+            const countryVal = addr.country || 'Unknown Country';
+            const stateVal = addr.state || addr.region || 'Unknown Region';
+            const cityVal = addr.city || addr.town || addr.village || addr.municipality || addr.county || 'Unknown City';
+            const districtVal = addr.district || addr.suburb || addr.neighbourhood || addr.county || '';
+            const displayVal = data.display_name || `${cityVal}, ${stateVal}, ${countryVal}`;
+
+            setCountry(countryVal);
+            setRegion(stateVal);
+            setCity(cityVal);
+            setWard(districtVal);
+            setSearchQuery(displayVal);
+            setSuggestions([]);
+            setCoordinates({ lat: latitude, lng: longitude });
+          }
+        } catch (e) {
+          console.warn("Reverse geocoding error:", e);
+          alert("Failed to resolve location details. Please search manually.");
+        } finally {
+          setSearching(false);
+        }
+      },
+      (error) => {
+        console.warn("Geolocation permission error:", error);
+        alert("Geolocation permission denied or failed. Please search manually.");
+        setSearching(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
   };
 
   const handleSubmit = async (e) => {
@@ -151,15 +196,23 @@ export default function LocationSwitcherModal({ isOpen, onClose }) {
                 <span>Search City, Region, or District</span>
                 {searching && <span className="text-[#D4AF37] font-mono text-[9px] animate-pulse">Searching global registry...</span>}
               </label>
-              <div className="relative">
+              <div className="flex gap-2">
                 <input
                   type="text"
                   required
                   placeholder="Search globally: e.g. Chennai, Brooklyn, London..."
                   value={searchQuery}
                   onChange={(e) => handleSearchChange(e.target.value)}
-                  className="w-full px-4 py-2.5 border border-[#EBE5DE] bg-[#F9F8F6] font-sans text-sm font-medium text-[#1A1A1A] focus:outline-none focus:border-[#1A1A1A] transition-colors rounded-xl"
+                  className="flex-1 px-4 py-2.5 border border-[#EBE5DE] bg-[#F9F8F6] font-sans text-sm font-medium text-[#1A1A1A] focus:outline-none focus:border-[#1A1A1A] transition-colors rounded-xl"
                 />
+                <button
+                  type="button"
+                  onClick={handleAutoLocate}
+                  className="px-4 py-2.5 bg-[#1A1A1A] text-[#D4AF37] hover:bg-[#D4AF37] hover:text-[#1A1A1A] rounded-xl font-mono text-[10px] uppercase font-bold tracking-wider transition-all border border-[#D4AF37]/20 flex items-center gap-1.5 shrink-0"
+                >
+                  <MapPin className="h-4 w-4" />
+                  <span>Auto-Locate</span>
+                </button>
               </div>
 
               {/* Suggestions List */}
