@@ -73,9 +73,16 @@ export const IssueCard = ({ issue, onUpvote, userUid }) => {
         </p>
 
         {/* Location Tag */}
-        <div className="mt-2 flex items-center gap-1.5 text-muted text-[11px] w-max max-w-full">
-          <IconMapPin size={14} className="shrink-0" />
-          <span className="truncate">{issue.location?.address}</span>
+        <div className="mt-2 flex items-center justify-between text-muted text-[11px] w-full">
+          <div className="flex items-center gap-1.5 truncate max-w-[70%]">
+            <IconMapPin size={14} className="shrink-0" />
+            <span className="truncate">{issue.location?.address}</span>
+          </div>
+          {issue.distanceKm !== undefined && (
+            <span className="px-2 py-0.5 bg-inverted/5 border border-border text-inverted font-mono font-bold text-[10px] rounded-full shrink-0">
+              📍 {issue.distanceKm} km away
+            </span>
+          )}
         </div>
       </div>
 

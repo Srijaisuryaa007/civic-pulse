@@ -19,7 +19,7 @@ const MAP_ATTRIBUTIONS = {
   terrain: '© OpenTopoMap'
 };
 
-export default function MapView({ issues, loading, showHeatmap, activeCategory }) {
+export default function MapView({ issues, loading, showHeatmap, activeCategory, isNearbyActive, userCoords }) {
   const { user } = useAuth();
   const mapRef = useRef(null);
   const navigate = useNavigate();
@@ -283,10 +283,34 @@ export default function MapView({ issues, loading, showHeatmap, activeCategory }
     leafletMarkersRef.current.forEach(m => m.remove());
     leafletHeatmapCirclesRef.current.forEach(c => c.remove());
 
-    const filteredIssues = issues.filter(issue => {
-      const isCatMatch = activeCategory === 'all' || issue.category?.toLowerCase() === activeCategory.toLowerCase();
+    let filteredIssues = issues.filter(issue => {
+      const isCatMatch = activeCategory === 'all' || activeCategory === 'nearby' || issue.category?.toLowerCase() === activeCategory.toLowerCase();
       return isCatMatch && issue.location?.latitude && issue.location?.longitude;
     });
+
+    if (isNearbyActive && userCoords) {
+      const R = 6371; // Earth radius in km
+      const lat1 = userCoords.lat;
+      const lon1 = userCoords.lng;
+
+      filteredIssues = filteredIssues.filter(issue => {
+        const lat2 = Number(issue.location.latitude);
+        const lon2 = Number(issue.location.longitude);
+        if (isNaN(lat2) || isNaN(lon2)) return false;
+
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLon = (lon2 - lon1) * Math.PI / 180;
+        const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                  Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                  Math.sin(dLon/2) * Math.sin(dLon/2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        const distance = R * c;
+        return distance <= 5.0; // 5km radius
+      });
+
+      // Center map on user location
+      leafletMap.setView([userCoords.lat, userCoords.lng], 13);
+    }
 
     const newMarkers = [];
     const newCircles = [];
@@ -350,7 +374,7 @@ export default function MapView({ issues, loading, showHeatmap, activeCategory }
 
     leafletMarkersRef.current = newMarkers;
     leafletHeatmapCirclesRef.current = newCircles;
-  }, [issues, showHeatmap, activeCategory, leafletMap]);
+  }, [issues, showHeatmap, activeCategory, leafletMap, isNearbyActive, userCoords]);
 
   // Popup content generator
   const createPopupHTML = (issue, styles) => {

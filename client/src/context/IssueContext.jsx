@@ -112,6 +112,25 @@ const processIssuesData = (rawList, user) => {
       const issueCountry = (issue.location?.country || '').toLowerCase();
       const issueCity = (issue.location?.city || '').toLowerCase();
 
+      // Check distance first to cover nearby cities (within 100km)
+      if (user.locationCoordinates && issue.location?.latitude && issue.location?.longitude) {
+        const lat1 = parseFloat(user.locationCoordinates.lat);
+        const lon1 = parseFloat(user.locationCoordinates.lng);
+        const lat2 = parseFloat(issue.location.latitude);
+        const lon2 = parseFloat(issue.location.longitude);
+        if (!isNaN(lat1) && !isNaN(lon1) && !isNaN(lat2) && !isNaN(lon2)) {
+          const R = 6371; // km
+          const dLat = (lat2 - lat1) * Math.PI / 180;
+          const dLon = (lon2 - lon1) * Math.PI / 180;
+          const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                    Math.sin(dLon/2) * Math.sin(dLon/2);
+          const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+          const distance = R * c;
+          if (distance <= 100.0) return true; // Show issues within 100km (covers nearby cities)
+        }
+      }
+
       // Explicit match if metadata exists
       if (issueCity && userCity && issueCity === userCity) return true;
       if (issueCountry && userCountry && issueCountry === userCountry) {

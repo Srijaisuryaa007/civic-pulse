@@ -2,12 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useIssues } from '../context/IssueContext';
 import { useAuth } from '../context/AuthContext';
-import { ThumbsUp, CheckCircle, MapPin, Send, Share2, ChevronLeft, Calendar, FileText, AlertTriangle } from 'lucide-react';
+import { ThumbsUp, CheckCircle, MapPin, Send, Share2, ChevronLeft, Calendar, FileText, AlertTriangle, X } from 'lucide-react';
 import { onSnapshot, doc } from 'firebase/firestore';
 import { db } from '../firebase';
 
 export default function IssueDetail() {
-  const { id } = useParams();
+  const id = useParams().id;
   const navigate = useNavigate();
   const { upvoteIssue, verifyIssue, updateIssueStatus, deleteIssue, addComment, triggerToast } = useIssues();
   const { user } = useAuth();
@@ -20,6 +20,20 @@ export default function IssueDetail() {
   const [simulationOpen, setSimulationOpen] = useState(false);
   const [simStatus, setSimStatus] = useState('In Progress');
   const [simNote, setSimNote] = useState('');
+
+  // Verified Contacts states
+  const [contact, setContact] = useState(null);
+  const [loadingContact, setLoadingContact] = useState(false);
+  const [showSubmitForm, setShowSubmitForm] = useState(false);
+  const [submittingContact, setSubmittingContact] = useState(false);
+  const [formData, setFormData] = useState({
+    officialName: '',
+    designation: '',
+    officialPhone: '',
+    officialEmail: '',
+    officeAddress: '',
+    sourceUrl: ''
+  });
 
   const [userState, setUserState] = useState({
     isAuthor: false,
@@ -49,6 +63,90 @@ export default function IssueDetail() {
     });
     return () => unsub();
   }, [id, user]);
+
+  // Load matching municipal contact info
+  useEffect(() => {
+    if (!issue) return;
+    setLoadingContact(true);
+    const city = issue.location?.city || '';
+    const ward = issue.location?.ward || '';
+    const category = issue.category || '';
+    
+    fetch(`/api/contacts?city=${encodeURIComponent(city)}&ward=${encodeURIComponent(ward)}&category=${encodeURIComponent(category)}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data && !data.error) {
+          setContact(data);
+        } else {
+          setContact(null);
+        }
+        setLoadingContact(false);
+      })
+      .catch(err => {
+        console.warn("Failed to load contact:", err);
+        setContact(null);
+        setLoadingContact(false);
+      });
+  }, [issue]);
+
+  // Handle contact suggestion submission
+  const handleContactSubmit = async (e) => {
+    e.preventDefault();
+    setSubmittingContact(true);
+    try {
+      const res = await fetch('/api/contacts/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          city: issue.location?.city || '',
+          ward: issue.location?.ward || '',
+          category: issue.category || '',
+          department: contact?.department || 'Municipal Works',
+          ...formData
+        })
+      });
+      if (res.ok) {
+        triggerToast("Thank you! Contact submitted for verification.", "success");
+        setShowSubmitForm(false);
+        setFormData({
+          officialName: '',
+          designation: '',
+          officialPhone: '',
+          officialEmail: '',
+          officeAddress: '',
+          sourceUrl: ''
+        });
+      } else {
+        triggerToast("Failed to submit contact suggestion.", "error");
+      }
+    } catch (err) {
+      console.error(err);
+      triggerToast("Submission error.", "error");
+    } finally {
+      setSubmittingContact(false);
+    }
+  };
+
+  // Helper to format the complaint letter dynamically
+  const getFormattedLetter = (letterText, verifiedContact) => {
+    if (!letterText) return '';
+    if (!verifiedContact) return letterText;
+
+    let formatted = letterText;
+    const recipientBlock = `To:\n${verifiedContact.officialName}\n${verifiedContact.designation}\n${verifiedContact.department}\n${verifiedContact.city}\nEmail: ${verifiedContact.officialEmail}`;
+    
+    if (formatted.includes('To:')) {
+      const toIndex = formatted.indexOf('To:');
+      const nextParagraph = formatted.indexOf('\n\n', toIndex);
+      if (nextParagraph > toIndex) {
+        formatted = formatted.substring(0, toIndex) + recipientBlock + formatted.substring(nextParagraph);
+      }
+    } else {
+      formatted = `${recipientBlock}\n\n${formatted}`;
+    }
+    return formatted;
+  };
+
 
   const handlePostComment = async (e) => {
     e.preventDefault();
@@ -100,7 +198,7 @@ export default function IssueDetail() {
 
   const statusSteps = [
     { key: 'Reported', label: '01. Reported', description: 'Filed in ledger' },
-    { key: 'Verified', label: '02. Verified', description: '3+ Votes met' },
+    { key: 'Verified', label: '02. Verified', description: 'Verifications met' },
     { key: 'In Progress', label: '03. In Progress', description: 'Assigned crew' },
     { key: 'Resolved', label: '04. Resolved', description: 'Remediated' }
   ];
@@ -338,7 +436,7 @@ export default function IssueDetail() {
                       <p className="step-label">{step.label}</p>
                       <p className={`step-sublabel ${isCompleted ? 'text-neutral-350' : 'text-neutral-400'}`}>
                         {isActive && step.key === 'Verified' && issue.status === 'Reported'
-                          ? `Votes: ${issue.verifications || 0}/3`
+                          ? `Verifies: ${issue.verifications || 0}`
                           : step.description}
                       </p>
                     </div>
@@ -450,7 +548,7 @@ export default function IssueDetail() {
  
               {/* Verifications */}
               <div className="p-3 border border-stone bg-transparent rounded-2xl shadow-soft">
-                <p className="ballot-count">{issue.verifications || 0}/3</p>
+                <p className="ballot-count">{issue.verifications || 0}</p>
                 <p className="ballot-count-label mt-1">Verifies</p>
                 
                 <button
@@ -472,7 +570,7 @@ export default function IssueDetail() {
             
             {issue.status === 'Reported' && (
               <p className="verification-note relative z-10">
-                <span>Verifications award </span><strong>+5 XP</strong>. 3 verifications promote cards to <strong>Verified</strong>.
+                <span>Verifications award </span><strong>+5 XP</strong>. Sufficient community verifications promote cards to <strong>Verified</strong>.
               </p>
             )}
           </div>
@@ -510,6 +608,96 @@ export default function IssueDetail() {
             </div>
           </div>
 
+          {/* Verified Municipal Contact Card */}
+          <div className="sidebar-panel bg-paper border border-stone rounded-[32px] space-y-4 shadow-soft relative overflow-hidden">
+            <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(212,175,55,0.02)_1px,transparent_1px)] [background-size:16px_16px] pointer-events-none" />
+            <h3 className="sidebar-panel-title relative z-10 flex justify-between items-center">
+              <span>Responsible Agency</span>
+              {contact && contact.isVerified ? (
+                <span className="text-[9px] font-mono uppercase font-bold tracking-widest text-emerald-600 bg-emerald-50 px-2 py-0.5 border border-emerald-300/30 rounded-full">
+                  ✓ Verified
+                </span>
+              ) : (
+                <span className="text-[9px] font-mono uppercase font-bold tracking-widest text-[#D4AF37] bg-amber-50 px-2 py-0.5 border border-amber-300/30 rounded-full animate-pulse">
+                  Unverified
+                </span>
+              )}
+            </h3>
+
+            {loadingContact ? (
+              <div className="text-center py-4 text-xs font-mono text-neutral-450 uppercase animate-pulse">Searching registry...</div>
+            ) : contact ? (
+              <div className="space-y-3 font-mono text-sm relative z-10">
+                <div className="p-3 border border-stone/50 bg-[#FAF9F6] rounded-2xl">
+                  <div className="font-bold text-forest text-[13px]">{contact.officialName}</div>
+                  <div className="text-neutral-400 text-[11px] uppercase tracking-wider mt-0.5">{contact.designation}</div>
+                  <div className="text-neutral-500 font-sans text-xs mt-1.5 font-semibold text-left">{contact.department}</div>
+                </div>
+
+                <div className="space-y-1.5 pl-1 text-left">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] text-neutral-450 uppercase tracking-widest min-w-[70px]">Phone:</span>
+                    <a href={`tel:${contact.officialPhone}`} className="text-forest hover:underline hover:text-terracotta transition-colors font-bold text-xs">
+                      {contact.officialPhone}
+                    </a>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] text-neutral-450 uppercase tracking-widest min-w-[70px]">Email:</span>
+                    <a href={`mailto:${contact.officialEmail}`} className="text-forest hover:underline hover:text-terracotta transition-colors font-bold text-xs truncate max-w-[170px]" title={contact.officialEmail}>
+                      {contact.officialEmail}
+                    </a>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="text-[11px] text-neutral-450 uppercase tracking-widest min-w-[70px] shrink-0 mt-0.5">Address:</span>
+                    <span className="text-neutral-500 font-sans text-xs leading-relaxed text-left">{contact.officeAddress}</span>
+                  </div>
+                </div>
+
+                <div className="border-t border-stone/50 pt-2.5 flex items-center justify-between text-[9px] text-neutral-400">
+                  <span>Last verified: {new Date(contact.lastVerified).toLocaleDateString()}</span>
+                  {contact.sourceUrl && (
+                    <a href={contact.sourceUrl} target="_blank" rel="noopener noreferrer" className="text-forest hover:underline">
+                      Source Link ↗
+                    </a>
+                  )}
+                </div>
+
+                <div className="text-center pt-1">
+                  <button 
+                    onClick={() => {
+                      setFormData({
+                        officialName: contact.officialName,
+                        designation: contact.designation,
+                        officialPhone: contact.officialPhone,
+                        officialEmail: contact.officialEmail,
+                        officeAddress: contact.officeAddress,
+                        sourceUrl: contact.sourceUrl || ''
+                      });
+                      setShowSubmitForm(true);
+                    }}
+                    className="text-[10px] text-terracotta hover:underline font-bold uppercase tracking-wider"
+                  >
+                    Report incorrect info
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-3 font-mono text-sm relative z-10">
+                <p className="text-xs text-neutral-450 leading-relaxed text-center italic bg-[#FAF9F6] p-3 border border-stone/50 rounded-2xl">
+                  Contact info for this department isn't verified yet — help us add it.
+                </p>
+                <div className="text-center">
+                  <button 
+                    onClick={() => setShowSubmitForm(true)}
+                    className="w-full py-2 border border-stone hover:bg-neutral-50 text-forest font-bold text-xs uppercase tracking-widest rounded-full transition-all shadow-soft cursor-pointer"
+                  >
+                    + Suggest Department Contact
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Copyable Letter Card (Highly rounded paper card) */}
           {issue.complaintLetter && (
             <div className="sidebar-panel bg-paper border border-stone rounded-[32px] space-y-3 relative shadow-soft overflow-hidden">
@@ -519,16 +707,16 @@ export default function IssueDetail() {
                 <h4 className="filing-letter-heading">Filing Letter</h4>
                 <button
                   onClick={() => {
-                    navigator.clipboard.writeText(issue.complaintLetter);
+                    navigator.clipboard.writeText(getFormattedLetter(issue.complaintLetter, contact));
                     triggerToast("Complaint letter copied.");
                   }}
-                  className="copy-btn flex items-center gap-0.5 text-terracotta hover:underline"
+                  className="copy-btn flex items-center gap-0.5 text-terracotta hover:underline cursor-pointer"
                 >
                   <FileText className="h-3 w-3 inline" /> Copy
                 </button>
               </div>
-              <div className="filing-letter-body relative z-10 rounded-2xl border border-stone bg-[#FAF9F6] p-3.5 max-h-48 overflow-y-auto whitespace-pre-wrap">
-                {issue.complaintLetter}
+              <div className="filing-letter-body relative z-10 rounded-2xl border border-stone bg-[#FAF9F6] p-3.5 max-h-48 overflow-y-auto whitespace-pre-wrap text-left">
+                {getFormattedLetter(issue.complaintLetter, contact)}
               </div>
             </div>
           )}
@@ -536,6 +724,124 @@ export default function IssueDetail() {
         </div>
 
       </div>
+
+      {/* Suggest Contact Form Modal */}
+      {showSubmitForm && (
+        <div className="fixed inset-0 z-[3000] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fadeIn">
+          <div className="relative w-full max-w-lg border border-stone bg-paper p-8 shadow-soft-xl rounded-[32px] flex flex-col justify-between max-h-[90vh] overflow-y-auto">
+            <button 
+              onClick={() => setShowSubmitForm(false)}
+              className="absolute top-4 right-4 text-neutral-400 hover:text-neutral-700 transition-colors focus:outline-none cursor-pointer"
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            <div>
+              <div className="flex items-center gap-2 border-b border-stone pb-3 mb-6">
+                <span className="text-[11px] font-mono uppercase tracking-[0.2em] font-bold text-neutral-450">
+                  Suggest Government Official Contact
+                </span>
+              </div>
+
+              <form onSubmit={handleContactSubmit} className="space-y-4 font-mono text-sm text-left">
+                <div>
+                  <label className="block text-[10px] uppercase tracking-wider font-bold text-neutral-450 mb-1">Official Name *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Thiru S. Rajendran"
+                    value={formData.officialName}
+                    onChange={(e) => setFormData({...formData, officialName: e.target.value})}
+                    className="w-full px-4 py-2.5 border border-stone bg-[#FAF9F6] rounded-2xl text-forest focus:outline-none focus:border-forest"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-wider font-bold text-neutral-450 mb-1">Designation *</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Executive Engineer"
+                      value={formData.designation}
+                      onChange={(e) => setFormData({...formData, designation: e.target.value})}
+                      className="w-full px-4 py-2.5 border border-stone bg-[#FAF9F6] rounded-2xl text-forest focus:outline-none focus:border-forest"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-wider font-bold text-neutral-450 mb-1">Public Phone *</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. +91 44 2561 9300"
+                      value={formData.officialPhone}
+                      onChange={(e) => setFormData({...formData, officialPhone: e.target.value})}
+                      className="w-full px-4 py-2.5 border border-stone bg-[#FAF9F6] rounded-2xl text-forest focus:outline-none focus:border-forest"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-wider font-bold text-neutral-450 mb-1">Official Email</label>
+                    <input
+                      type="email"
+                      placeholder="e.g. name@department.gov"
+                      value={formData.officialEmail}
+                      onChange={(e) => setFormData({...formData, officialEmail: e.target.value})}
+                      className="w-full px-4 py-2.5 border border-stone bg-[#FAF9F6] rounded-2xl text-forest focus:outline-none focus:border-forest"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-wider font-bold text-neutral-450 mb-1">Source URL *</label>
+                    <input
+                      type="url"
+                      required
+                      placeholder="e.g. https://chennaicorporation.gov.in"
+                      value={formData.sourceUrl}
+                      onChange={(e) => setFormData({...formData, sourceUrl: e.target.value})}
+                      className="w-full px-4 py-2.5 border border-stone bg-[#FAF9F6] rounded-2xl text-forest focus:outline-none focus:border-forest"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] uppercase tracking-wider font-bold text-neutral-450 mb-1">Office Address</label>
+                  <textarea
+                    placeholder="e.g. Ripon Building, EVR Salai, Chennai"
+                    value={formData.officeAddress}
+                    onChange={(e) => setFormData({...formData, officeAddress: e.target.value})}
+                    rows={2}
+                    className="w-full px-4 py-2.5 border border-stone bg-[#FAF9F6] rounded-2xl text-forest focus:outline-none focus:border-forest font-sans text-xs"
+                  />
+                </div>
+
+                <p className="text-[10px] text-neutral-400 leading-relaxed font-sans">
+                  * All suggestions undergo audit review matching public portals before verified status is granted on the ledger.
+                </p>
+
+                <div className="pt-4 flex justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowSubmitForm(false)}
+                    className="px-5 py-2.5 border border-stone text-neutral-450 hover:text-forest font-mono text-[11px] uppercase tracking-[0.15em] font-bold transition-all rounded-full cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={submittingContact}
+                    className="px-6 py-2.5 bg-forest hover:bg-terracotta text-white font-mono text-[11px] uppercase tracking-[0.15em] font-bold transition-all rounded-full flex items-center gap-1.5 cursor-pointer shadow-soft"
+                  >
+                    {submittingContact ? 'Submitting...' : 'Submit Info'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useIssues } from '../context/IssueContext';
 import { useAuth } from '../context/AuthContext';
-import { IconSearch, IconChevronLeft, IconChevronRight, IconFilter } from '@tabler/icons-react';
+import { IconSearch, IconChevronLeft, IconChevronRight, IconFilter, IconMapPin } from '@tabler/icons-react';
 import { IssueCard } from '../components/ui/IssueCard';
 import { SkeletonCard } from '../components/ui/SkeletonCard';
 import { StatusChip } from '../components/ui/StatusChip';
@@ -19,6 +19,12 @@ export default function Issues() {
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [sortBy, setSortBy] = useState('newest');
   
+  // Nearby issues states
+  const [isNearbyActive, setIsNearbyActive] = useState(false);
+  const [nearbyIssues, setNearbyIssues] = useState([]);
+  const [loadingNearby, setLoadingNearby] = useState(false);
+  const [nearbyError, setNearbyError] = useState(null);
+
   // Sidebar state
   const [selectedIssue, setSelectedIssue] = useState(null);
 
@@ -26,8 +32,77 @@ export default function Issues() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
 
+  const fetchNearby = (lat, lng) => {
+    setLoadingNearby(true);
+    setNearbyError(null);
+    fetch(`/api/issues/nearby?lat=${lat}&lng=${lng}&radius=5`)
+      .then(res => {
+        if (!res.ok) throw new Error("Failed to load nearby issues");
+        return res.json();
+      })
+      .then(data => {
+        setNearbyIssues(data.issues || []);
+        setLoadingNearby(false);
+      })
+      .catch(err => {
+        console.error(err);
+        setNearbyError(err.message);
+        setLoadingNearby(false);
+      });
+  };
+
+  const handleToggleNearby = () => {
+    if (isNearbyActive) {
+      setIsNearbyActive(false);
+      setNearbyIssues([]);
+      return;
+    }
+
+    setIsNearbyActive(true);
+    setCurrentPage(1);
+
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          fetchNearby(latitude, longitude);
+        },
+        (err) => {
+          console.warn("Geolocation error, falling back to home profile:", err);
+          const homeLat = user?.locationCoordinates?.lat;
+          const homeLng = user?.locationCoordinates?.lng;
+          if (homeLat && homeLng) {
+            fetchNearby(homeLat, homeLng);
+            alert(`Location access denied. Displaying issues near your registered profile: ${user.city || 'Home'}.`);
+          } else {
+            setNearbyError("Location permission denied and no home profile coordinates available.");
+          }
+        },
+        { enableHighAccuracy: true, timeout: 5000 }
+      );
+    } else {
+      const homeLat = user?.locationCoordinates?.lat;
+      const homeLng = user?.locationCoordinates?.lng;
+      if (homeLat && homeLng) {
+        fetchNearby(homeLat, homeLng);
+      } else {
+        setNearbyError("Browser geolocation not supported and no home profile available.");
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (isNearbyActive) {
+      setSortBy('distance');
+    } else {
+      setSortBy('newest');
+    }
+  }, [isNearbyActive]);
+
   // Filter & Sort Logic
-  let filtered = issues.filter(issue => {
+  let filtered = isNearbyActive ? nearbyIssues : issues;
+  
+  filtered = filtered.filter(issue => {
     const catMatch = categoryFilter === 'all' || issue.category?.toLowerCase() === categoryFilter.toLowerCase();
     const statusMatch = statusFilter === 'all' || issue.status?.toLowerCase() === statusFilter.toLowerCase();
     
@@ -41,6 +116,7 @@ export default function Issues() {
   });
 
   filtered.sort((a, b) => {
+    if (sortBy === 'distance' && isNearbyActive) return (a.distanceKm || 0) - (b.distanceKm || 0);
     if (sortBy === 'newest') return new Date(b.createdAt) - new Date(a.createdAt);
     if (sortBy === 'upvotes') return (b.upvotes || 0) - (a.upvotes || 0);
     return 0;
@@ -76,6 +152,18 @@ export default function Issues() {
           </div>
           
           <div className="flex items-center gap-3">
+            <button
+              onClick={handleToggleNearby}
+              className={`px-4 py-2 border rounded-full text-[13px] font-medium transition-all flex items-center gap-1.5 cursor-pointer shadow-soft ${
+                isNearbyActive 
+                  ? 'bg-inverted text-white border-transparent' 
+                  : 'bg-white text-inverted border-border hover:bg-surface'
+              }`}
+            >
+              <IconMapPin size={15} />
+              <span>{isNearbyActive ? 'Hyperlocal Active' : 'Nearby Feed'}</span>
+            </button>
+
             <select
               value={categoryFilter}
               onChange={(e) => { setCategoryFilter(e.target.value); setCurrentPage(1); }}
@@ -93,6 +181,7 @@ export default function Issues() {
               onChange={(e) => setSortBy(e.target.value)}
               className="px-4 py-2 bg-white border border-border rounded-full text-[13px] font-medium text-inverted focus:outline-none cursor-pointer hover:bg-surface transition-colors"
             >
+              {isNearbyActive && <option value="distance">Nearest First</option>}
               <option value="newest">Newest</option>
               <option value="upvotes">Most Voted</option>
             </select>
@@ -112,22 +201,35 @@ export default function Issues() {
           
           {/* Main Feed: 2-col masonry */}
           <div className="lg:col-span-2">
-            {error ? (
+            {isNearbyActive && nearbyError ? (
+              <CompassMappingLoader loading={false} error={nearbyError} onRetry={() => {
+                if (navigator.geolocation) {
+                  navigator.geolocation.getCurrentPosition(
+                    (p) => fetchNearby(p.coords.latitude, p.coords.longitude),
+                    () => fetchNearby(user?.locationCoordinates?.lat, user?.locationCoordinates?.lng)
+                  );
+                }
+              }} isOverlay={false} />
+            ) : !isNearbyActive && error ? (
               <CompassMappingLoader loading={false} error={error} onRetry={refreshIssues || (() => window.location.reload())} isOverlay={false} />
-            ) : loading ? (
+            ) : isNearbyActive && loadingNearby ? (
+              <CompassMappingLoader loading={true} error={null} text="Locating nearby reports..." isOverlay={false} />
+            ) : !isNearbyActive && loading ? (
               <CompassMappingLoader loading={true} error={null} onRetry={refreshIssues || (() => window.location.reload())} text="Loading Issue Feed..." isOverlay={false} />
             ) : paginatedIssues.length === 0 ? (
               <div className="text-center py-24 px-6 bg-[#F9F8F6] border border-[#EBE5DE] rounded-none my-6 relative overflow-hidden shadow-soft">
                 <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(212,175,55,0.03)_1px,transparent_1px)] [background-size:20px_20px] pointer-events-none" />
                 <div className="relative z-10 max-w-lg mx-auto">
                   <span className="inline-block text-[11px] font-mono uppercase tracking-[0.2em] font-bold text-[#D4AF37] mb-3">
-                    {user?.city ? `${user.city} Registry` : 'Unpopulated Jurisdiction'}
+                    {isNearbyActive ? 'Hyperlocal Radio' : user?.city ? `${user.city} Registry` : 'Unpopulated Jurisdiction'}
                   </span>
                   <h3 className="font-serif text-3xl sm:text-4xl font-bold text-[#1A1A1A] tracking-tight">
-                    No Issues Reported in Your Area Yet
+                    {isNearbyActive ? 'No Issues Reported Near You Yet' : 'No Issues Reported in Your Area Yet'}
                   </h3>
                   <p className="text-sm font-sans text-[#6C6863] mt-3 leading-relaxed">
-                    Be the first citizen hero to register an infrastructure audit or municipal road hazard in your locality. Your report sets the standard for civic accountability.
+                    {isNearbyActive 
+                      ? 'Be the first to audit road hazards or utility leaks in your immediate vicinity to notify public departments.'
+                      : 'Be the first citizen hero to register an infrastructure audit or municipal road hazard in your locality.'}
                   </p>
                   <div className="mt-8">
                     <Link

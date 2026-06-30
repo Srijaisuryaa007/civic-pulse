@@ -36,6 +36,99 @@ export default function Report() {
     }
   }, [user]);
 
+  // Leaflet Picker Map states
+  const [mapInstance, setMapInstance] = useState(null);
+  const [markerInstance, setMarkerInstance] = useState(null);
+
+  // Initialize pick map
+  useEffect(() => {
+    if (step !== 1) return;
+
+    const container = document.getElementById('report-map');
+    if (!window.L || !container || mapInstance) return;
+
+    const L = window.L;
+
+    const initialLat = parseFloat(lat) || 12.9716;
+    const initialLng = parseFloat(lng) || 77.5946;
+
+    const map = L.map('report-map', {
+      center: [initialLat, initialLng],
+      zoom: 13,
+      zoomControl: true,
+      attributionControl: false
+    });
+
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+      maxZoom: 19
+    }).addTo(map);
+
+    const marker = L.marker([initialLat, initialLng], {
+      draggable: true
+    }).addTo(map);
+
+    // Draggable marker logic
+    marker.on('dragend', async (e) => {
+      const position = marker.getLatLng();
+      setLat(position.lat.toFixed(6));
+      setLng(position.lng.toFixed(6));
+
+      try {
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${position.lat}&lon=${position.lng}&zoom=18&addressdetails=1`
+        );
+        if (response.ok) {
+          const data = await response.json();
+          setAddress(data.display_name || `${position.lat.toFixed(4)}, ${position.lng.toFixed(4)}`);
+        }
+      } catch (err) {
+        console.warn("Reverse geocode error:", err);
+      }
+    });
+
+    // Map click snapping
+    map.on('click', async (e) => {
+      const position = e.latlng;
+      marker.setLatLng(position);
+      setLat(position.lat.toFixed(6));
+      setLng(position.lng.toFixed(6));
+
+      try {
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${position.lat}&lon=${position.lng}&zoom=18&addressdetails=1`
+        );
+        if (response.ok) {
+          const data = await response.json();
+          setAddress(data.display_name || `${position.lat.toFixed(4)}, ${position.lng.toFixed(4)}`);
+        }
+      } catch (err) {
+        console.warn("Reverse geocode error:", err);
+      }
+    });
+
+    setMapInstance(map);
+    setMarkerInstance(marker);
+
+    return () => {
+      map.remove();
+    };
+  }, [step]);
+
+  // Sync inputs to map changes
+  useEffect(() => {
+    if (!mapInstance || !markerInstance) return;
+    const currentLat = parseFloat(lat);
+    const currentLng = parseFloat(lng);
+    if (!isNaN(currentLat) && !isNaN(currentLng)) {
+      const currentLatLng = markerInstance.getLatLng();
+      if (Math.abs(currentLatLng.lat - currentLat) > 0.0001 || Math.abs(currentLatLng.lng - currentLng) > 0.0001) {
+        markerInstance.setLatLng([currentLat, currentLng]);
+        mapInstance.panTo([currentLat, currentLng]);
+      }
+    }
+  }, [lat, lng, mapInstance, markerInstance]);
+
+
   // Handle Drag & Drop
   const handleDrag = (e) => {
     e.preventDefault();
@@ -312,6 +405,20 @@ export default function Report() {
                 className="w-full border-b border-stone bg-transparent p-2.5 text-xs font-mono text-forest focus:bg-neutral-50 focus:outline-none"
               />
             </div>
+          </div>
+
+          {/* Interactive Pick Map Widget */}
+          <div className="space-y-2">
+            <label className="block text-[10px] font-mono font-bold uppercase tracking-widest text-neutral-500 ml-2">Interactive Location Picker</label>
+            <div 
+              id="report-map" 
+              className="h-48 w-full border border-stone bg-neutral-100 shadow-soft overflow-hidden rounded-[24px] relative z-10"
+            >
+              <div className="absolute inset-0 halftone-placeholder pointer-events-none opacity-5" />
+            </div>
+            <p className="text-[10px] text-neutral-450 font-mono uppercase tracking-wider ml-2">
+              Drag the marker pin or click anywhere on the map to choose the exact coordinates
+            </p>
           </div>
 
           <div>

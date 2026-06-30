@@ -205,6 +205,67 @@ router.post('/', async (req, res) => {
 });
 
 /**
+ * @route GET /api/issues/nearby
+ * @desc Get all issues sorted by proximity to provided lat/lng coordinates
+ */
+router.get('/nearby', async (req, res) => {
+  try {
+    const { lat, lng, radius = 5 } = req.query;
+    if (!lat || !lng) {
+      return res.status(400).json({ error: 'Latitude (lat) and longitude (lng) are required' });
+    }
+
+    const lat1 = parseFloat(lat);
+    const lon1 = parseFloat(lng);
+    const radKm = parseFloat(radius);
+
+    if (isNaN(lat1) || isNaN(lon1)) {
+      return res.status(400).json({ error: 'Invalid coordinate parameters' });
+    }
+
+    // Fetch all issues from DB
+    const issuesSnap = await db.collection('issues').get();
+    const list = [];
+    issuesSnap.forEach(doc => {
+      list.push(doc.data());
+    });
+
+    const R = 6371; // Earth radius in km
+    const matched = [];
+
+    list.forEach(issue => {
+      const lat2 = parseFloat(issue.location?.latitude);
+      const lon2 = parseFloat(issue.location?.longitude);
+      if (isNaN(lat2) || isNaN(lon2)) return;
+
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon/2) * Math.sin(dLon/2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      const distance = R * c;
+
+      if (distance <= radKm) {
+        matched.push({
+          ...issue,
+          distanceKm: Number(distance.toFixed(2))
+        });
+      }
+    });
+
+    // Sort closest first
+    matched.sort((a, b) => a.distanceKm - b.distanceKm);
+
+    res.json({ issues: matched });
+  } catch (error) {
+    console.error(`🔴 Error fetching nearby issues: ${error.message}`);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
+/**
  * @route GET /api/issues
  * @desc Get all issues with filters, search, and pagination
  */
@@ -319,6 +380,48 @@ router.get('/:id', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+
+/**
+ * @route POST /api/issues/:id/comments
+ * @desc File a comment under an issue
+ */
+router.post('/:id/comments', async (req, res) => {
+  try {
+    const { userId, userName, userPhoto, text } = req.body;
+    const issueId = req.params.id;
+
+    if (!userId || !text) {
+      return res.status(400).json({ error: 'User ID and comment text are required' });
+    }
+
+    const newComment = {
+      id: `${issueId}-comment-${Date.now()}`,
+      issueId,
+      userId,
+      userName: userName || 'Citizen Hero',
+      userPhoto: userPhoto || '',
+      text,
+      createdAt: new Date().toISOString()
+    };
+
+    // Save to Firestore
+    await db.collection('comments').doc(newComment.id).set(newComment);
+
+    // Update issue document's updatedAt timestamp
+    await db.collection('issues').doc(issueId).update({
+      updatedAt: new Date().toISOString()
+    });
+
+    // Award Gamification Points for commenting (+2 XP)
+    await updateUserPoints(userId, 2, 'comment', { displayName: userName, photoURL: userPhoto });
+
+    res.status(201).json(newComment);
+  } catch (error) {
+    console.error(`🔴 Error posting comment: ${error.message}`);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 
 /**
  * @route PATCH /api/issues/:id

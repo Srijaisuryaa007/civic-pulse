@@ -12,11 +12,36 @@ export default function Home() {
   const [activeCategory, setActiveCategory] = useState('all');
   const [showHeatmap, setShowHeatmap] = useState(false);
   const [showLocationModal, setShowLocationModal] = useState(false);
+  const [userCoords, setUserCoords] = useState(null);
   const [stats, setStats] = useState({
     resolved: 0,
     citizensHelped: 0,
     neighborhoodsCovered: 0
   });
+
+  // Geolocation trigger for map nearby mode
+  useEffect(() => {
+    if (activeCategory === 'nearby') {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            setUserCoords({
+              lat: position.coords.latitude,
+              lng: position.coords.longitude
+            });
+          },
+          (err) => {
+            console.warn("Geolocation error on map page, using home profile:", err);
+            if (user?.locationCoordinates) {
+              setUserCoords(user.locationCoordinates);
+            }
+          }
+        );
+      } else if (user?.locationCoordinates) {
+        setUserCoords(user.locationCoordinates);
+      }
+    }
+  }, [activeCategory, user]);
 
   // Calculate statistics from issues and users
   useEffect(() => {
@@ -50,6 +75,7 @@ export default function Home() {
 
   const categories = [
     { id: 'all', name: 'All Issues' },
+    { id: 'nearby', name: 'Nearby (5km)' },
     { id: 'pothole', name: 'Potholes' },
     { id: 'water leak', name: 'Water Leaks' },
     { id: 'streetlight', name: 'Streetlights' },
@@ -109,6 +135,8 @@ export default function Home() {
           issues={issues} 
           showHeatmap={showHeatmap} 
           activeCategory={activeCategory} 
+          isNearbyActive={activeCategory === 'nearby'}
+          userCoords={userCoords}
         />
 
         {/* 3. Floating Overlay: Category Filters (Pill design) */}

@@ -8,6 +8,7 @@ import dotenv from 'dotenv';
 // Import routes
 import issueRoutes from './routes/issues.js';
 import analyticsRoutes from './routes/analytics.js';
+import contactRoutes from './routes/contacts.js';
 import { isSimulationMode } from './config/firebase.js';
 
 if (isSimulationMode) {
@@ -48,6 +49,7 @@ app.use('/uploads', express.static(uploadsDir));
 // Register API Routes
 app.use('/api/issues', issueRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/contacts', contactRoutes);
 
 // Healthy check route
 app.get('/api/health', (req, res) => {
