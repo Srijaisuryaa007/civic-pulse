@@ -10,16 +10,7 @@ let serviceAccount;
 try {
   serviceAccount = require('../config/serviceAccount.json');
 } catch (e) {
-  console.error('==============================================');
-  console.error('FATAL: serviceAccount.json not found.');
-  console.error('Steps to fix:');
-  console.error('1. Go to Firebase Console');
-  console.error('2. Project Settings → Service accounts');
-  console.error('3. Click Generate new private key');
-  console.error('4. Save as server/config/serviceAccount.json');
-  console.error('5. Add it to .gitignore immediately');
-  console.error('==============================================');
-  process.exit(1);
+  console.warn('NOTE: server/config/serviceAccount.json not found. Will attempt Application Default Credentials or Simulation Mode.');
 }
 
 const __filename = fileURLToPath(import.meta.url);
@@ -196,19 +187,22 @@ let isSimulationMode = false;
 
 // Attempt real initialization or fall back to simulation
 try {
+  const firebaseConfig = {};
+  if (serviceAccount) {
+    firebaseConfig.credential = admin.credential.cert(serviceAccount);
+    firebaseConfig.storageBucket = `${serviceAccount.project_id}.appspot.com`;
+  }
+  
   if (!admin.apps.length) {
-    admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount),
-      storageBucket: `${serviceAccount.project_id}.appspot.com`
-    });
+    admin.initializeApp(firebaseConfig);
   }
   db = admin.firestore();
   isSimulationMode = false;
   console.log('Firebase Firestore connected successfully.');
 } catch (error) {
-  console.error('Firebase connection failed:', error.message);
-  console.error('Check your serviceAccount.json file.');
-  process.exit(1);
+  console.warn('Firebase connection failed, falling back to Simulation Mode:', error.message);
+  db = new MockFirestore();
+  isSimulationMode = true;
 }
 
 export { db, isSimulationMode };
