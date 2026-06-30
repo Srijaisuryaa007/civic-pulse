@@ -47,8 +47,23 @@ export default {
         },
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+        sans: ['Outfit', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
         serif: ['"Playfair Display"', 'Georgia', 'serif'],
+        mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
+        body: ['Outfit', 'system-ui', 'sans-serif'],
+      },
+      fontSize: {
+        // Override Tailwind defaults with larger, more legible scale
+        'xs':   ['0.8125rem',  { lineHeight: '1.5',  letterSpacing: '0.01em' }],   // 13px
+        'sm':   ['0.9375rem',  { lineHeight: '1.6',  letterSpacing: '0.005em' }],  // 15px
+        'base': ['1.0625rem',  { lineHeight: '1.65', letterSpacing: '0.003em' }],  // 17px
+        'lg':   ['1.1875rem',  { lineHeight: '1.6',  letterSpacing: '0' }],        // 19px
+        'xl':   ['1.3125rem',  { lineHeight: '1.5',  letterSpacing: '-0.01em' }],  // 21px
+        '2xl':  ['1.5625rem',  { lineHeight: '1.4',  letterSpacing: '-0.015em' }], // 25px
+        '3xl':  ['1.9375rem',  { lineHeight: '1.3',  letterSpacing: '-0.02em' }],  // 31px
+        '4xl':  ['2.375rem',   { lineHeight: '1.2',  letterSpacing: '-0.025em' }], // 38px
+        '5xl':  ['3rem',       { lineHeight: '1.1',  letterSpacing: '-0.03em' }],  // 48px
+        '6xl':  ['3.75rem',    { lineHeight: '1.05', letterSpacing: '-0.035em' }], // 60px
       },
       borderWidth: {
         hairline: '0.5px',

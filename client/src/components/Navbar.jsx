@@ -102,7 +102,7 @@ export default function Navbar() {
                   <Link
                     key={item.path}
                     to={item.path}
-                    className={`flex items-center gap-1.5 px-3 py-2 text-[11px] font-sans uppercase tracking-[0.15em] font-semibold transition-all duration-300 ${
+                    className={`flex items-center gap-1.5 px-3 py-2 text-[13px] font-sans uppercase tracking-[0.12em] font-semibold transition-all duration-300 ${
                       isActive 
                         ? 'text-[#1A1A1A] border-b-2 border-[#D4AF37]' 
                         : 'text-[#6C6863] hover:text-[#1A1A1A]'
@@ -118,7 +118,7 @@ export default function Navbar() {
           {/* Live Activity Ticker (Center/Hidden on small screens) */}
           <div className="hidden lg:flex items-center gap-2 px-3.5 py-1.5 bg-[#1A1A1A] text-[#D4AF37] text-xs font-mono rounded-full border border-[#D4AF37]/30 shadow-soft animate-fadeIn">
             <span className="animate-pulse">●</span>
-            <span className="truncate max-w-[240px] text-[11px] text-[#FFFFFF] font-sans">{liveEvents[tickerIndex]}</span>
+            <span className="truncate max-w-[240px] text-xs text-[#FFFFFF] font-sans">{liveEvents[tickerIndex]}</span>
           </div>
 
           {/* Right Profile / Access actions */}
@@ -128,7 +128,7 @@ export default function Navbar() {
               data-tour="satellite-btn"
               onClick={handleSatelliteClick}
               title="GTA5 3D Satellite Zoom"
-              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[#D4AF37]/50 bg-[#1A1A1A] text-[#D4AF37] hover:bg-[#D4AF37] hover:text-[#1A1A1A] transition-all font-mono text-[10px] uppercase font-bold shadow-soft"
+              className="hidden sm:flex items-center gap-1.5 px-3.5 py-2 rounded-full border border-[#D4AF37]/50 bg-[#1A1A1A] text-[#D4AF37] hover:bg-[#D4AF37] hover:text-[#1A1A1A] transition-all font-mono text-[12px] uppercase font-bold shadow-soft"
             >
               <Compass className="h-3.5 w-3.5 animate-spin" style={{ animationDuration: '10s' }} />
               <span>3D Satellite</span>
@@ -138,7 +138,7 @@ export default function Navbar() {
             <button
               onClick={() => setShowTour(true)}
               title="Spotlight Walkthrough"
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[#D4AF37] bg-[#D4AF37]/15 text-[#1A1A1A] dark:text-[#D4AF37] hover:bg-[#1A1A1A] hover:text-white transition-all font-mono text-[10px] uppercase font-bold shadow-soft"
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-full border border-[#D4AF37] bg-[#D4AF37]/15 text-[#1A1A1A] dark:text-[#D4AF37] hover:bg-[#1A1A1A] hover:text-white transition-all font-mono text-[12px] uppercase font-bold shadow-soft"
             >
               <Sparkles className="h-3.5 w-3.5 text-[#D4AF37]" />
               <span>Walkthrough</span>
@@ -158,7 +158,7 @@ export default function Navbar() {
                 {/* Points Badge (Pill) */}
                 <Link
                   to="/profile"
-                  className="flex items-center gap-1.5 border border-[#D4AF37]/40 bg-[#D4AF37]/10 px-4 py-1.5 text-[11px] font-sans font-bold uppercase tracking-[0.15em] text-[#1A1A1A] rounded-full hover:bg-[#D4AF37]/20 transition-colors shadow-soft"
+                  className="flex items-center gap-1.5 border border-[#D4AF37]/40 bg-[#D4AF37]/10 px-4 py-1.5 text-xs font-sans font-bold uppercase tracking-[0.12em] text-[#1A1A1A] rounded-full hover:bg-[#D4AF37]/20 transition-colors shadow-soft"
                 >
                   {user.points || 0} XP
                 </Link>
@@ -180,7 +180,7 @@ export default function Navbar() {
                   {menuOpen && (
                     <div className="absolute right-0 mt-3 w-56 border border-[#EBE5DE] bg-[#F9F8F6] p-2 rounded-2xl shadow-soft-xl z-30 overflow-hidden font-sans">
                       <div className="px-4 py-3 border-b border-[#EBE5DE] bg-[#EBE5DE]/30 rounded-t-xl mb-1">
-                        <p className="text-[10px] font-sans font-semibold uppercase tracking-[0.15em] text-[#6C6863]">Active Hero</p>
+                        <p className="text-[11px] font-sans font-semibold uppercase tracking-[0.12em] text-[#6C6863]">Active Hero</p>
                         <p className="text-sm font-serif font-bold truncate text-[#1A1A1A] mt-0.5">
                           {user.displayName}
                         </p>
@@ -194,7 +194,7 @@ export default function Navbar() {
                       <Link
                         to="/profile"
                         onClick={() => setMenuOpen(false)}
-                        className="flex w-full items-center gap-2.5 rounded-xl px-3.5 py-2.5 text-xs font-sans font-medium uppercase tracking-[0.1em] text-[#1A1A1A] hover:bg-[#1A1A1A] hover:text-white transition-all duration-200"
+                        className="flex w-full items-center gap-2.5 rounded-xl px-3.5 py-2.5 text-sm font-sans font-medium uppercase tracking-[0.08em] text-[#1A1A1A] hover:bg-[#1A1A1A] hover:text-white transition-all duration-200"
                       >
                         <IconUser className="h-4 w-4 text-[#D4AF37]" />
                         My Profile
@@ -205,7 +205,7 @@ export default function Navbar() {
                           setMenuOpen(false);
                           logout();
                         }}
-                        className="flex w-full items-center gap-2.5 rounded-xl px-3.5 py-2.5 text-xs font-sans font-medium uppercase tracking-[0.1em] text-[#6C6863] hover:bg-[#1A1A1A] hover:text-white transition-all duration-200 mt-0.5"
+                        className="flex w-full items-center gap-2.5 rounded-xl px-3.5 py-2.5 text-sm font-sans font-medium uppercase tracking-[0.08em] text-[#6C6863] hover:bg-[#1A1A1A] hover:text-white transition-all duration-200 mt-0.5"
                       >
                         <IconLogout className="h-4 w-4 text-[#D4AF37]" />
                         Logout
@@ -217,7 +217,7 @@ export default function Navbar() {
             ) : (
               <Link
                 to="/login"
-                className="px-6 py-2.5 text-[11px] font-sans font-bold uppercase tracking-[0.15em] bg-[#1A1A1A] text-[#FFFFFF] hover:bg-[#D4AF37] hover:text-[#1A1A1A] rounded-full active:scale-95 transition-all duration-300 shadow-soft hover:shadow-soft-md"
+                className="px-6 py-2.5 text-[13px] font-sans font-bold uppercase tracking-[0.12em] bg-[#1A1A1A] text-[#FFFFFF] hover:bg-[#D4AF37] hover:text-[#1A1A1A] rounded-full active:scale-95 transition-all duration-300 shadow-soft hover:shadow-soft-md"
               >
                 Sign In
               </Link>
