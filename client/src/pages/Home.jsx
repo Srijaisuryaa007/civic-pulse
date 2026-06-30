@@ -131,7 +131,7 @@ export default function Home() {
         </div>
 
         {/* 5. Floating Action Button (FAB) */}
-        <div className="absolute bottom-6 right-6 z-25">
+        <div className="absolute bottom-6 right-6 z-30">
           <Link
             data-tour="report-btn"
             to={user ? "/report" : "/login"}
