@@ -13,10 +13,8 @@ export const uploadImage = async (file) => {
     throw new Error('Image must be under 5MB.');
   }
 
-  const cloudName = import.meta.env
-                    .VITE_CLOUDINARY_CLOUD_NAME;
-  const uploadPreset = import.meta.env
-                       .VITE_CLOUDINARY_UPLOAD_PRESET;
+  const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || "dryam9zw8";
+  const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || "CIVIC PULSE";
 
   const formData = new FormData();
   formData.append('file', file);
