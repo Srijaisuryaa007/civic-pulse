@@ -93,11 +93,11 @@ const DEFAULT_SEEDED_ISSUES = [
 const processIssuesData = (rawList, user) => {
   if (!rawList) return [];
   
-  // Deduplicate by title to prevent repetitive signals
+  // Deduplicate by ID to prevent duplicate listings
   const uniqueMap = new Map();
   rawList.forEach(item => {
-    if (item && item.title && !uniqueMap.has(item.title)) {
-      uniqueMap.set(item.title, item);
+    if (item && item.id && !uniqueMap.has(item.id)) {
+      uniqueMap.set(item.id, item);
     }
   });
   let uniqueList = Array.from(uniqueMap.values());
@@ -108,6 +108,9 @@ const processIssuesData = (rawList, user) => {
     const userCountry = (user.country || '').toLowerCase();
 
     uniqueList = uniqueList.filter(issue => {
+      // Always show issues created by the current user themselves
+      if (issue.authorId === user.uid) return true;
+
       const addr = (issue.location?.address || '').toLowerCase();
       const issueCountry = (issue.location?.country || '').toLowerCase();
       const issueCity = (issue.location?.city || '').toLowerCase();
