@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useIssues } from '../context/IssueContext';
 import { useAuth } from '../context/AuthContext';
-import { ThumbsUp, CheckCircle, MapPin, Send, Share2, ChevronLeft, Calendar, FileText, AlertTriangle, X } from 'lucide-react';
-import { onSnapshot, doc } from 'firebase/firestore';
+import { ThumbsUp, CheckCircle, MapPin, Send, Share2, ChevronLeft, Calendar, FileText, AlertTriangle, X, Heart } from 'lucide-react';
+import { onSnapshot, doc, updateDoc, arrayUnion, arrayRemove, increment, collection, query, where } from 'firebase/firestore';
 import { db } from '../firebase';
 
 export default function IssueDetail() {
@@ -15,6 +15,7 @@ export default function IssueDetail() {
   const [issue, setIssue] = useState(null);
   const [loadingIssue, setLoadingIssue] = useState(true);
   const [commentText, setCommentText] = useState('');
+  const [comments, setComments] = useState([]);
   
   // Simulation states
   const [simulationOpen, setSimulationOpen] = useState(false);
@@ -63,6 +64,20 @@ export default function IssueDetail() {
     });
     return () => unsub();
   }, [id, user]);
+
+  // Real-time comments loader
+  useEffect(() => {
+    const q = query(collection(db, 'comments'), where('issueId', '==', id));
+    const unsub = onSnapshot(q, (snap) => {
+      const list = [];
+      snap.forEach(docSnap => {
+        list.push(docSnap.data());
+      });
+      list.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+      setComments(list);
+    });
+    return () => unsub();
+  }, [id]);
 
   // Load matching municipal contact info
   useEffect(() => {
@@ -159,6 +174,46 @@ export default function IssueDetail() {
 
     await addComment(id, commentText);
     setCommentText('');
+  };
+
+  const handleLikeComment = async (comment) => {
+    if (!user) {
+      triggerToast("Please sign in to like comments!", "warning");
+      return;
+    }
+    if (!comment.id) return;
+    const commentRef = doc(db, 'comments', comment.id);
+    const hasLiked = comment.likedBy?.includes(user.uid);
+    try {
+      await updateDoc(commentRef, {
+        likedBy: hasLiked ? arrayRemove(user.uid) : arrayUnion(user.uid),
+        likesCount: increment(hasLiked ? -1 : 1)
+      });
+    } catch (err) {
+      console.warn("Failed to like comment:", err);
+    }
+  };
+
+  const handleReplyTo = (username) => {
+    setCommentText(`@${username} `);
+  };
+
+  const formatRelativeTime = (dateInput) => {
+    if (!dateInput) return '';
+    const now = new Date();
+    const date = new Date(dateInput);
+    const diffMs = now - date;
+    const diffSec = Math.floor(diffMs / 1000);
+    const diffMin = Math.floor(diffSec / 60);
+    const diffHr = Math.floor(diffMin / 60);
+    const diffDays = Math.floor(diffHr / 24);
+
+    if (diffSec < 60) return 'Just now';
+    if (diffMin < 60) return `${diffMin}m ago`;
+    if (diffHr < 24) return `${diffHr}h ago`;
+    if (diffDays === 1) return 'Yesterday';
+    if (diffDays < 7) return `${diffDays}d ago`;
+    return date.toLocaleDateString();
   };
 
   const handleSimulateStatus = async (e) => {
@@ -468,30 +523,66 @@ export default function IssueDetail() {
           {/* Comments section */}
           <div className="bg-paper border border-stone rounded-[32px] p-6 space-y-5 shadow-soft">
             <h3 className="correspondence-title border-b border-stone pb-3 mb-4">
-              Community Correspondence ({issue.commentsCount || 0})
+              Community Correspondence ({comments.length})
             </h3>
 
             {/* Comments Thread */}
             <div className="space-y-4 max-h-[350px] overflow-y-auto pr-1">
-              {!issue.comments || issue.comments.length === 0 ? (
+              {comments.length === 0 ? (
                 <div className="text-center py-6 border border-stone border-dashed rounded-[20px]">
                   <p className="text-base font-mono text-neutral-450 uppercase tracking-wide">No correspondence filed yet</p>
                 </div>
               ) : (
-                issue.comments.map((comment) => (
-                  <div key={comment.id} className="flex items-start gap-2.5 text-base pb-3 border-b border-stone/30 last:border-0">
-                    <div className="h-7 w-7 border border-stone text-forest bg-neutral-100 font-mono font-bold flex items-center justify-center text-sm uppercase rounded-full shrink-0">
-                      {comment.userName?.substring(0, 2).toUpperCase()}
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between mb-1 text-sm font-mono uppercase tracking-widest text-neutral-400">
-                        <span className="font-bold text-forest">{comment.userName}</span>
-                        <span>{formatDate(comment.createdAt)}</span>
+                comments.map((comment) => {
+                  const hasLikedComment = comment.likedBy?.includes(user?.uid);
+                  return (
+                    <div key={comment.id} className="flex items-start justify-between gap-2.5 text-base pb-3 border-b border-stone/30 last:border-0">
+                      <div className="flex gap-2.5 items-start">
+                        {comment.userPhoto ? (
+                          <img 
+                            src={comment.userPhoto} 
+                            alt={comment.userName} 
+                            className="h-8 w-8 rounded-full object-cover border border-stone shrink-0"
+                          />
+                        ) : (
+                          <div className="h-8 w-8 border border-stone text-forest bg-neutral-100 font-mono font-bold flex items-center justify-center text-xs uppercase rounded-full shrink-0">
+                            {comment.userName?.substring(0, 2).toUpperCase()}
+                          </div>
+                        )}
+                        <div className="text-left">
+                          <div className="flex items-center gap-1.5 mb-0.5 text-xs font-mono uppercase tracking-widest text-neutral-450">
+                            <span className="font-bold text-forest">{comment.userName}</span>
+                            <span>{formatRelativeTime(comment.createdAt)}</span>
+                          </div>
+                          <p className="text-neutral-550 leading-relaxed font-sans text-sm text-left">{comment.text}</p>
+                          <div className="flex items-center gap-3.5 mt-1 text-[10px] font-mono font-bold text-neutral-400 uppercase">
+                            <button 
+                              type="button"
+                              onClick={() => handleReplyTo(comment.userName)}
+                              className="hover:text-forest transition-colors cursor-pointer"
+                            >
+                              Reply
+                            </button>
+                          </div>
+                        </div>
                       </div>
-                      <p className="text-neutral-500 leading-relaxed font-body text-justify">{comment.text}</p>
+
+                      {/* Like button on comment (Instagram-style) */}
+                      <button
+                        type="button"
+                        onClick={() => handleLikeComment(comment)}
+                        className={`flex flex-col items-center justify-center p-1.5 hover:scale-105 active:scale-95 transition-all text-neutral-400 ${
+                          hasLikedComment ? 'text-red-500' : 'hover:text-neutral-600'
+                        }`}
+                      >
+                        <Heart className={`h-4 w-4 ${hasLikedComment ? 'fill-current' : ''}`} />
+                        {comment.likesCount > 0 && (
+                          <span className="text-[9px] font-mono mt-0.5 font-bold">{comment.likesCount}</span>
+                        )}
+                      </button>
                     </div>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
 
