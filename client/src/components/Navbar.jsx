@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { IconLogout, IconUser, IconMapPin, IconList, IconChartBar, IconLeaf } from '@tabler/icons-react';
 import { Sun, Moon, Compass, Sparkles } from 'lucide-react';
@@ -9,6 +9,7 @@ import Shuffle from './ui/Shuffle';
 export default function Navbar() {
   const { user, logout } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('theme') === 'dark');
   const [tickerIndex, setTickerIndex] = useState(0);
@@ -31,7 +32,14 @@ export default function Navbar() {
 
   useEffect(() => {
     if (user && !localStorage.getItem('civicpulse_tour_completed')) {
-      const timer = setTimeout(() => setShowTour(true), 1500);
+      const timer = setTimeout(() => {
+        if (location.pathname !== '/app') {
+          navigate('/app');
+          setTimeout(() => setShowTour(true), 600);
+        } else {
+          setShowTour(true);
+        }
+      }, 1500);
       return () => clearTimeout(timer);
     }
   }, [user]);
@@ -136,7 +144,14 @@ export default function Navbar() {
 
             {/* Interactive Tour Trigger */}
             <button
-              onClick={() => setShowTour(true)}
+              onClick={() => {
+                if (location.pathname !== '/app') {
+                  navigate('/app');
+                  setTimeout(() => setShowTour(true), 600);
+                } else {
+                  setShowTour(true);
+                }
+              }}
               title="Spotlight Walkthrough"
               className="flex items-center gap-1.5 px-3.5 py-2 rounded-full border border-[#D4AF37] bg-[#D4AF37]/15 text-[#1A1A1A] dark:text-[#D4AF37] hover:bg-[#1A1A1A] hover:text-white transition-all font-mono text-[12px] uppercase font-bold shadow-soft"
             >

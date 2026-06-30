@@ -99,7 +99,7 @@ export default function Home() {
         />
 
         {/* 3. Floating Overlay: Category Filters (Pill design) */}
-        <div className="absolute top-4 left-4 z-20 flex flex-wrap gap-2 max-w-[calc(100%-8rem)]">
+        <div data-tour="map-filters" className="absolute top-4 left-4 z-20 flex flex-wrap gap-2 max-w-[calc(100%-8rem)]">
           {categories.map((cat) => (
             <button
               key={cat.id}
@@ -133,6 +133,7 @@ export default function Home() {
         {/* 5. Floating Action Button (FAB) */}
         <div className="absolute bottom-6 right-6 z-25">
           <Link
+            data-tour="report-btn"
             to={user ? "/report" : "/login"}
             className="flex h-12 w-12 items-center justify-center rounded-full bg-[#1A1A1A] text-[#D4AF37] shadow-soft-md hover:scale-105 active:scale-95 transition-all duration-300 hover:bg-[#D4AF37] hover:text-[#1A1A1A] relative group border border-[#D4AF37]/30"
             id="fab-report-button"
