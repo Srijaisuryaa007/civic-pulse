@@ -391,7 +391,7 @@ export const IssueProvider = ({ children }) => {
       authorName: user.displayName || user.email,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
-      status: 'reported',
+      status: 'Reported',
       votedBy: [],
       verifiedBy: [],
       votes: 0,
@@ -405,7 +405,24 @@ export const IssueProvider = ({ children }) => {
       reportsCount: increment(1)
     });
 
-    const newIssue = { id: docRef.id, ...issueData };
+    const newIssue = { 
+      id: docRef.id, 
+      ...issueData,
+      status: 'Reported',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      upvotes: 0,
+      verifications: 0,
+      votedBy: [],
+      verifiedBy: [],
+      comments: [],
+      commentsCount: 0,
+      reporter: {
+        uid: user.uid,
+        displayName: user.displayName || user.email,
+        photoURL: user.photoURL || ''
+      }
+    };
     setIssues(prev => [newIssue, ...prev]);
     triggerToast("Issue reported successfully! 10 XP points earned.");
     refreshPoints();
