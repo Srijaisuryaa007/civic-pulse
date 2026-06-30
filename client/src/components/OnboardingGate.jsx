@@ -7,12 +7,10 @@ export default function OnboardingGate() {
   const { user, completeOnboarding } = useAuth();
   
   const [step, setStep] = useState(1);
-  const [country, setCountry] = useState('United States');
-  const [region, setRegion] = useState('California');
-  const [city, setCity] = useState('San Francisco');
-  const [customRegion, setCustomRegion] = useState('');
-  const [customCity, setCustomCity] = useState('');
-  const [ward, setWard] = useState('Mission District');
+  const [country, setCountry] = useState('');
+  const [region, setRegion] = useState('');
+  const [city, setCity] = useState('');
+  const [ward, setWard] = useState('');
   const [age, setAge] = useState('');
   const [username, setUsername] = useState(user?.displayName ? user.displayName.toLowerCase().replace(/[^a-z0-9_]/g, '_').substring(0, 15) : '');
   
@@ -20,63 +18,54 @@ export default function OnboardingGate() {
   const [loading, setLoading] = useState(false);
   const [satelliteFlightData, setSatelliteFlightData] = useState(null);
 
-  const countries = Object.keys(LOCATION_DATA).sort();
-  const regions = country && LOCATION_DATA[country] ? Object.keys(LOCATION_DATA[country]).sort() : [];
-  const citiesObj = country && region && LOCATION_DATA[country]?.[region] ? LOCATION_DATA[country][region] : {};
-  const cities = Object.keys(citiesObj).sort();
+  // Search states for global autocomplete
+  const [searchQuery, setSearchQuery] = useState('');
+  const [suggestions, setSuggestions] = useState([]);
+  const [searching, setSearching] = useState(false);
 
-  // Automatically synchronize region when country changes
-  useEffect(() => {
-    if (country && LOCATION_DATA[country]) {
-      const availRegions = Object.keys(LOCATION_DATA[country]);
-      if (!availRegions.includes(region) && region !== 'Other') {
-        const firstReg = availRegions[0] || '';
-        setRegion(firstReg);
-        const availCities = firstReg && LOCATION_DATA[country][firstReg] ? Object.keys(LOCATION_DATA[country][firstReg]) : [];
-        setCity(availCities[0] || '');
-      }
+  const handleSearchChange = async (val) => {
+    setSearchQuery(val);
+    if (val.trim().length < 3) {
+      setSuggestions([]);
+      return;
     }
-  }, [country]);
-
-  // Automatically synchronize city when region changes
-  useEffect(() => {
-    if (country && region && LOCATION_DATA[country]?.[region]) {
-      const availCities = Object.keys(LOCATION_DATA[country][region]);
-      if (!availCities.includes(city) && city !== 'Other') {
-        setCity(availCities[0] || '');
+    setSearching(true);
+    try {
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(val)}&format=json&limit=5&addressdetails=1`);
+      if (res.ok) {
+        const data = await res.json();
+        setSuggestions(data);
       }
+    } catch (e) {
+      console.warn("Location search error:", e);
+    } finally {
+      setSearching(false);
     }
-  }, [country, region]);
-
-  const handleCountryChange = (e) => {
-    const newCountry = e.target.value;
-    setCountry(newCountry);
-    const newRegions = LOCATION_DATA[newCountry] ? Object.keys(LOCATION_DATA[newCountry]) : [];
-    const firstRegion = newRegions[0] || '';
-    setRegion(firstRegion);
-    const newCities = firstRegion && LOCATION_DATA[newCountry]?.[firstRegion] ? Object.keys(LOCATION_DATA[newCountry][firstRegion]) : [];
-    setCity(newCities[0] || '');
   };
 
-  const handleRegionChange = (e) => {
-    const newRegion = e.target.value;
-    setRegion(newRegion);
-    const newCities = LOCATION_DATA[country]?.[newRegion] ? Object.keys(LOCATION_DATA[country][newRegion]) : [];
-    setCity(newCities[0] || '');
+  const handleSelectSuggestion = (place) => {
+    const addr = place.address || {};
+    const cityVal = addr.city || addr.town || addr.village || addr.municipality || addr.county || place.name || 'Unknown City';
+    const stateVal = addr.state || addr.region || 'Unknown Region';
+    const countryVal = addr.country || 'Unknown Country';
+    const districtVal = addr.district || addr.county || addr.suburb || addr.neighbourhood || '';
+
+    setCountry(countryVal);
+    setRegion(stateVal);
+    setCity(cityVal);
+    setWard(districtVal);
+    setSearchQuery(place.display_name);
+    setSuggestions([]);
+
+    const lat = Number(place.lat);
+    const lng = Number(place.lon);
+    setSatelliteFlightData({ lat, lng, city: cityVal, country: countryVal });
   };
 
   const handleNextStep1 = (e) => {
     e.preventDefault();
-    if (!country) {
-      setError('Please select a jurisdiction country.');
-      return;
-    }
-    if (region === 'Other' && !customRegion) {
-      setError('Please specify your state or region.');
-      return;
-    }
-    if ((!city || city === 'Other') && !customCity) {
-      setError('Please specify your municipal city.');
+    if (!country || !city || !satelliteFlightData) {
+      setError('Please search and select your location from the suggestions dropdown.');
       return;
     }
     setError('');
@@ -113,16 +102,16 @@ export default function OnboardingGate() {
     setLoading(true);
     setError('');
 
-    // Resolve exact coordinates accurately
-    const selectedRegionName = region === 'Other' ? customRegion : region;
-    const selectedCityName = city === 'Other' ? customCity : city;
-    const coords = resolveExactCoordinates(country, selectedRegionName, selectedCityName);
+    const coords = {
+      lat: satelliteFlightData.lat,
+      lng: satelliteFlightData.lng
+    };
 
     setLoading(true);
     await completeOnboarding({
       country,
-      region: selectedRegionName,
-      city: selectedCityName,
+      region,
+      city,
       ward,
       age: parseInt(age, 10),
       username: cleanUsername,
@@ -133,7 +122,7 @@ export default function OnboardingGate() {
     sessionStorage.setItem('trigger_gta5_map_zoom', JSON.stringify({
       lat: coords.lat,
       lng: coords.lng,
-      city: selectedCityName,
+      city,
       country
     }));
 
@@ -168,100 +157,54 @@ export default function OnboardingGate() {
                   Establish Your Jurisdiction
                 </h1>
                 <p className="font-sans text-sm text-[#6C6863] mt-2 leading-relaxed">
-                  CivicPulse strictly isolates issue feeds and interactive telemetry to your municipal territory. Select your primary region of residence.
+                  CivicPulse strictly isolates issue feeds and interactive telemetry to your municipal territory. Search for your city, town, village, or district anywhere on Earth.
                 </p>
               </div>
 
               <div className="space-y-4 pt-2">
-                <div>
-                  <label className="block text-[11px] font-mono uppercase tracking-[0.15em] font-bold text-[#6C6863] mb-1.5">
-                    Sovereign Country
+                <div className="relative">
+                  <label className="block text-[11px] font-mono uppercase tracking-[0.15em] font-bold text-[#6C6863] mb-1.5 flex items-center justify-between">
+                    <span>Search City, Region, or District</span>
+                    {searching && <span className="text-[#D4AF37] font-mono text-[9px] animate-pulse">Searching global registry...</span>}
                   </label>
-                  <select
-                    value={country}
-                    onChange={handleCountryChange}
-                    className="w-full px-4 py-3 border border-[#EBE5DE] bg-[#F9F8F6] font-sans text-sm font-medium text-[#1A1A1A] focus:outline-none focus:border-[#1A1A1A] transition-colors"
-                  >
-                    {countries.map(c => <option key={c} value={c}>{c}</option>)}
-                  </select>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-[11px] font-mono uppercase tracking-[0.15em] font-bold text-[#6C6863] mb-1.5">
-                      State / Region
-                    </label>
-                    <select
-                      value={region}
-                      onChange={handleRegionChange}
-                      className="w-full px-4 py-3 border border-[#EBE5DE] bg-[#F9F8F6] font-sans text-sm font-medium text-[#1A1A1A] focus:outline-none focus:border-[#1A1A1A] transition-colors"
-                    >
-                      {regions.map(r => <option key={r} value={r}>{r}</option>)}
-                      <option value="Other">Other / Unlisted State</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-mono uppercase tracking-[0.15em] font-bold text-[#6C6863] mb-1.5">
-                      Municipal City
-                    </label>
-                    <select
-                      value={city}
-                      onChange={(e) => setCity(e.target.value)}
-                      className="w-full px-4 py-3 border border-[#EBE5DE] bg-[#F9F8F6] font-sans text-sm font-medium text-[#1A1A1A] focus:outline-none focus:border-[#1A1A1A] transition-colors"
-                    >
-                      {cities.map(ct => <option key={ct} value={ct}>{ct}</option>)}
-                      <option value="Other">Other / Unlisted City</option>
-                    </select>
-                  </div>
-                </div>
-
-                {region === 'Other' && (
-                  <div>
-                    <label className="block text-[11px] font-mono uppercase tracking-[0.15em] font-bold text-[#6C6863] mb-1.5">
-                      Specify State / Region Name
-                    </label>
+                  <div className="relative">
                     <input
                       type="text"
                       required
-                      placeholder="e.g. Goa, Tasmania, Bavaria"
-                      value={customRegion}
-                      onChange={(e) => setCustomRegion(e.target.value)}
-                      className="w-full px-4 py-3 border border-[#EBE5DE] bg-[#F9F8F6] font-sans text-sm font-medium text-[#1A1A1A] focus:outline-none focus:border-[#1A1A1A]"
+                      placeholder="e.g. Chennai, Brooklyn, London, Shibuya..."
+                      value={searchQuery}
+                      onChange={(e) => handleSearchChange(e.target.value)}
+                      className="w-full px-4 py-3 border border-[#EBE5DE] bg-[#F9F8F6] font-sans text-sm font-medium text-[#1A1A1A] focus:outline-none focus:border-[#1A1A1A] transition-colors rounded-xl"
                     />
                   </div>
-                )}
 
-                {city === 'Other' && (
-                  <div>
-                    <label className="block text-[11px] font-mono uppercase tracking-[0.15em] font-bold text-[#6C6863] mb-1.5">
-                      Specify City Name
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="e.g. Palo Alto"
-                      value={customCity}
-                      onChange={(e) => setCustomCity(e.target.value)}
-                      className="w-full px-4 py-3 border border-[#EBE5DE] bg-[#F9F8F6] font-sans text-sm font-medium text-[#1A1A1A] focus:outline-none focus:border-[#1A1A1A]"
-                    >
-                    </input>
+                  {/* Suggestions List */}
+                  {suggestions.length > 0 && (
+                    <div className="absolute left-0 right-0 mt-2 z-50 border border-[#EBE5DE] bg-[#FFFFFF] shadow-lg rounded-xl overflow-hidden max-h-60 overflow-y-auto">
+                      {suggestions.map((place) => (
+                        <button
+                          key={place.place_id}
+                          type="button"
+                          onClick={() => handleSelectSuggestion(place)}
+                          className="w-full text-left px-4 py-3 hover:bg-[#F9F8F6] border-b border-[#EBE5DE]/30 text-xs font-sans text-[#1A1A1A] flex flex-col gap-0.5 transition-colors"
+                        >
+                          <span className="font-bold text-[13px]">{place.display_name.split(',')[0]}</span>
+                          <span className="text-[10px] text-[#6C6863] truncate">{place.display_name}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {country && (
+                  <div className="p-4 bg-[#F9F8F6] border border-[#EBE5DE] text-xs font-sans text-[#6C6863] space-y-1.5 rounded-xl animate-fadeIn">
+                    <div className="font-mono font-bold uppercase text-[10px] text-[#1A1A1A]">Detected Jurisdiction Parameters:</div>
+                    <div>• Sovereign Country: <strong className="text-[#1A1A1A]">{country}</strong></div>
+                    <div>• State / Region: <strong className="text-[#1A1A1A]">{region}</strong></div>
+                    <div>• Municipal City / Area: <strong className="text-[#1A1A1A]">{city}</strong></div>
+                    {ward && <div>• Local District / Ward: <strong className="text-[#1A1A1A]">{ward}</strong></div>}
                   </div>
                 )}
-
-                <div>
-                  <label className="block text-[11px] font-mono uppercase tracking-[0.15em] font-bold text-[#6C6863] mb-1.5 flex items-center justify-between">
-                    <span>Ward / Hyperlocal Locality</span>
-                    <span className="text-[#D4AF37] font-semibold text-[10px]">Optional</span>
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Mission District, Ward 12, Indiranagar"
-                    value={ward}
-                    onChange={(e) => setWard(e.target.value)}
-                    className="w-full px-4 py-3 border border-[#EBE5DE] bg-[#F9F8F6] font-sans text-sm font-medium text-[#1A1A1A] focus:outline-none focus:border-[#1A1A1A] transition-colors"
-                  />
-                </div>
               </div>
 
               {error && (
@@ -274,7 +217,7 @@ export default function OnboardingGate() {
               <div className="pt-4 flex justify-end">
                 <button
                   type="submit"
-                  className="px-8 py-3.5 bg-[#1A1A1A] text-[#FFFFFF] hover:bg-[#D4AF37] hover:text-[#1A1A1A] font-mono text-xs uppercase tracking-[0.2em] font-bold transition-all duration-300 flex items-center gap-2"
+                  className="px-8 py-3.5 bg-[#1A1A1A] text-[#FFFFFF] hover:bg-[#D4AF37] hover:text-[#1A1A1A] font-mono text-xs uppercase tracking-[0.2em] font-bold transition-all duration-300 flex items-center gap-2 rounded-xl"
                 >
                   <span>Confirm Jurisdiction</span>
                   <ArrowRight className="h-4 w-4" />
@@ -371,7 +314,7 @@ export default function OnboardingGate() {
 
                 <div className="p-4 bg-[#F9F8F6] border border-[#EBE5DE] text-xs font-sans text-[#6C6863] space-y-1.5">
                   <div className="font-mono font-bold uppercase text-[10px] text-[#1A1A1A]">Configured Parameters:</div>
-                  <div>• Jurisdiction: <strong className="text-[#1A1A1A]">{city === 'Other' ? customCity : city}, {region}, {country}</strong></div>
+                  <div>• Jurisdiction: <strong className="text-[#1A1A1A]">{city}, {region}, {country}</strong></div>
                   <div>• Demographic Age: <strong className="text-[#1A1A1A]">{age} years</strong></div>
                 </div>
               </div>
