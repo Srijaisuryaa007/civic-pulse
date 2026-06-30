@@ -12,13 +12,13 @@
   }
 
   html {
-    background-color: #F7F6F2;
-    color: #141414;
+    background-color: #F9F8F6;
+    color: #1A1A1A;
   }
   
   body {
-    background-color: #F7F6F2;
-    color: #141414;
+    background-color: #F9F8F6;
+    color: #1A1A1A;
     min-height: 100vh;
     font-family: 'Inter', system-ui, sans-serif;
     font-size: 14px;
@@ -31,6 +31,45 @@
     background-color: #141414;
     color: #FFFFFF;
   }
+}
+
+/* Luxury Dark Mode Overrides */
+html.dark {
+  background-color: #0A0D0B !important;
+  color: #F9F8F6 !important;
+}
+html.dark body {
+  background-color: #0A0D0B !important;
+  color: #F9F8F6 !important;
+}
+html.dark .bg-\[\#F9F8F6\], html.dark .bg-\[\#FFFFFF\], html.dark .bg-paper, html.dark .bg-base, html.dark .bg-surface {
+  background-color: #111613 !important;
+  color: #F9F8F6 !important;
+}
+html.dark .bg-\[\#F9F8F6\]\/90, html.dark .bg-paper\/95 {
+  background-color: rgba(17, 22, 19, 0.92) !important;
+}
+html.dark .border-\[\#EBE5DE\], html.dark .border-stone, html.dark .border-border, html.dark .border-border\/40 {
+  border-color: rgba(212, 175, 55, 0.22) !important;
+}
+html.dark .text-\[\#1A1A1A\], html.dark .text-inverted, html.dark .text-forest {
+  color: #F9F8F6 !important;
+}
+html.dark .text-\[\#6C6863\], html.dark .text-sage, html.dark .text-muted {
+  color: #A39E97 !important;
+}
+
+/* Micro-interaction Card Hover Elevation */
+.issue-card-hover {
+  transition: transform 300ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 300ms cubic-bezier(0.16, 1, 0.3, 1), border-color 300ms ease;
+  will-change: transform, box-shadow;
+}
+.issue-card-hover:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 16px 32px -8px rgba(26, 26, 26, 0.12), 0 0 0 1px rgba(212, 175, 55, 0.35);
+}
+html.dark .issue-card-hover:hover {
+  box-shadow: 0 16px 32px -8px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(212, 175, 55, 0.6);
 }
 
 /* Base interactive lift (tint instead of shadow) */
@@ -63,4 +102,226 @@
 }
 ::-webkit-scrollbar-thumb:hover {
   background-color: rgba(20, 20, 20, 0.4);
+}
+
+/* Map Style Controls */
+.map-style-toggle {
+  display: flex;
+  gap: 0.5rem;
+  background-color: #F9F8F6; /* alabaster */
+  padding: 0.25rem;
+  border-radius: 9999px;
+  box-shadow: 0 4px 12px -2px rgba(26, 26, 26, 0.08), 0 2px 4px -1px rgba(26, 26, 26, 0.04);
+  border: 1px solid #EBE5DE; /* taupe */
+}
+
+.map-style-btn {
+  padding: 0.375rem 1rem;
+  font-size: 0.75rem;
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #6C6863; /* warm grey */
+  border-radius: 9999px;
+  transition: all 300ms ease;
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.map-style-btn:hover {
+  background-color: rgba(26, 26, 26, 0.04);
+  color: #1A1A1A;
+}
+
+.map-style-btn.active {
+  background-color: #1A1A1A; /* charcoal */
+  color: #FFFFFF;
+}
+
+/* Shadow utilities fallback */
+.shadow-soft {
+  box-shadow: 0 4px 12px -2px rgba(26, 26, 26, 0.06), 0 2px 4px -1px rgba(26, 26, 26, 0.03);
+}
+.shadow-soft-md {
+  box-shadow: 0 8px 24px -4px rgba(26, 26, 26, 0.08), 0 4px 8px -2px rgba(26, 26, 26, 0.04);
+}
+.shadow-soft-xl {
+  box-shadow: 0 20px 40px -8px rgba(26, 26, 26, 0.12), 0 8px 16px -4px rgba(26, 26, 26, 0.06);
+}
+
+@keyframes bounceScale {
+  0% {
+    opacity: 0;
+    transform: scale(0) translateY(20px);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.15) translateY(-6px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.animate-bounceScale {
+  animation: bounceScale 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+@keyframes pinDrop {
+  0% { transform: translateY(-120px) scale(0.8); }
+  50% { transform: translateY(0px) scale(1.05); }
+  65% { transform: translateY(-20px) scale(0.95); }
+  80% { transform: translateY(0px) scale(1.02); }
+  90% { transform: translateY(-6px) scale(0.98); }
+  100% { transform: translateY(0px) scale(1); }
+}
+
+@keyframes pinShadow {
+  0% { transform: scale(0.3); opacity: 0.1; }
+  50% { transform: scale(1.2); opacity: 0.8; }
+  65% { transform: scale(0.8); opacity: 0.4; }
+  80% { transform: scale(1.05); opacity: 0.7; }
+  90% { transform: scale(0.95); opacity: 0.5; }
+  100% { transform: scale(1); opacity: 0.6; }
+}
+
+@keyframes roadStripe {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-24px); }
+}
+
+@keyframes carTravel {
+  0% { transform: translateX(-20px); }
+  50% { transform: translateX(180px); }
+  100% { transform: translateX(-20px); }
+}
+
+.animate-pinDrop {
+  animation: pinDrop 1.2s cubic-bezier(0.25, 1, 0.5, 1) infinite;
+}
+
+.animate-pinShadow {
+  animation: pinShadow 1.2s cubic-bezier(0.25, 1, 0.5, 1) infinite;
+}
+
+.animate-roadStripe {
+  animation: roadStripe 0.3s linear infinite;
+}
+
+.animate-carTravel {
+  animation: carTravel 3s ease-in-out infinite;
+}
+
+/* Compass Mapping Loader Animation (.pl) */
+.pl {
+  display: block;
+  width: 9.375em;
+  height: 9.375em;
+}
+
+.pl__arrows,
+.pl__ring-rotate,
+.pl__ring-stroke,
+.pl__tick {
+  animation-duration: 2s;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+.pl__arrows {
+  animation-name: arrows42;
+  transform: rotate(45deg);
+  transform-origin: 16px 52px;
+}
+
+.pl__ring-rotate,
+.pl__ring-stroke {
+  transform-origin: 80px 80px;
+}
+
+.pl__ring-rotate {
+  animation-name: ringRotate42;
+}
+
+.pl__ring-stroke {
+  animation-name: ringStroke42;
+  transform: rotate(-45deg);
+}
+
+.pl__tick {
+  animation-name: tick42;
+}
+
+.pl__tick:nth-child(2) {
+  animation-delay: -1.75s;
+}
+
+.pl__tick:nth-child(3) {
+  animation-delay: -1.5s;
+}
+
+.pl__tick:nth-child(4) {
+  animation-delay: -1.25s;
+}
+
+.pl__tick:nth-child(5) {
+  animation-delay: -1s;
+}
+
+.pl__tick:nth-child(6) {
+  animation-delay: -0.75s;
+}
+
+.pl__tick:nth-child(7) {
+  animation-delay: -0.5s;
+}
+
+.pl__tick:nth-child(8) {
+  animation-delay: -0.25s;
+}
+
+@keyframes arrows42 {
+  from {
+    transform: rotate(45deg);
+  }
+  to {
+    transform: rotate(405deg);
+  }
+}
+
+@keyframes ringRotate42 {
+  from {
+    transform: rotate(0);
+  }
+  to {
+    transform: rotate(720deg);
+  }
+}
+
+@keyframes ringStroke42 {
+  from,
+  to {
+    stroke-dashoffset: 452;
+    transform: rotate(-45deg);
+  }
+  50% {
+    stroke-dashoffset: 169.5;
+    transform: rotate(-180deg);
+  }
+}
+
+@keyframes tick42 {
+  from,
+  3%,
+  47%,
+  to {
+    stroke-dashoffset: -12;
+  }
+  14%,
+  36% {
+    stroke-dashoffset: 0;
+  }
 }

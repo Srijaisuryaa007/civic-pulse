@@ -30,7 +30,7 @@ export const IssueCard = ({ issue, onUpvote, userUid }) => {
   return (
     <div 
       onClick={() => navigate(`/issue/${issue.id}`)}
-      className="break-inside-avoid bg-surface rounded-[14px] overflow-hidden border border-border flex flex-col group cursor-pointer lift-hover mb-6"
+      className="break-inside-avoid bg-surface rounded-[14px] overflow-hidden border border-border flex flex-col group cursor-pointer issue-card-hover mb-6 active:scale-[0.99] transition-all duration-200"
     >
       {/* Header Image Area - 190px tall */}
       <div className="relative w-full h-[190px] bg-inverted-surface overflow-hidden">

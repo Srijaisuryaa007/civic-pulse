@@ -1,126 +1,232 @@
 {
   "issues": [
     {
-      "title": "Damaged Road and Active Pothole",
-      "description": "Reported issue of category pothole located at Thendral Avenue, Basthi, Hosur, Krishnagiri, Tamil Nadu, 635109, India. Immediate inspection and remediation are requested.",
+      "id": "sf-issue-101",
+      "title": "Severe Pothole on Market Street Transit Corridor",
+      "description": "Deep asphalt trench forming along the eastbound Muni bus lane near 4th Street. Posing significant hazard to cyclists and transit vehicles during peak commute hours.",
       "category": "pothole",
-      "severity": 7,
+      "severity": 8,
       "urgencyLevel": "high",
-      "estimatedResolutionDays": 5,
-      "recommendedAuthority": "Municipal Corporation Road Maintenance Dept",
-      "complaintLetter": "To,\nThe Executive Engineer,\nMunicipal Corporation Road Maintenance Dept,\nThendral Avenue, Basthi, Hosur, Krishnagiri, Tamil Nadu, 635109, India\n\nSubject: Urgent Complaint Regarding Damaged Road and Active Pothole at Thendral Avenue, Basthi, Hosur, Krishnagiri, Tamil Nadu, 635109, India\n\nRespected Sir/Madam,\n\nI am writing to bring to your attention a pressing civic issue: \"Damaged Road and Active Pothole\" located near Thendral Avenue, Basthi, Hosur, Krishnagiri, Tamil Nadu, 635109, India. \n\nThis issue represents a significant concern for residents in this area. Specifically, it has caused severe damage to vehicles and poses a major accident risk for two-wheelers.\n\nWe kindly request your department to inspect this site and arrange for the resolution of this issue on a priority basis. We estimate this should require approximately 5 days of standard repair work.\n\nThank you for your attention to this community matter.\n\nSincerely,\n[Your Name]\n[Contact Details]\nDate: [Date]",
+      "estimatedResolutionDays": 3,
+      "recommendedAuthority": "SFMTA & DPW Street Repair Division",
+      "complaintLetter": "To SF DPW: Urgent repair requested for hazardous road surface fault on Market St corridor.",
       "isDuplicate": false,
       "similarIssues": [],
       "location": {
-        "address": "Thendral Avenue, Basthi, Hosur, Krishnagiri, Tamil Nadu, 635109, India",
-        "latitude": 12.742375999999998,
-        "longitude": 77.844833
+        "address": "780 Market St, San Francisco, CA 94102",
+        "latitude": 37.7858,
+        "longitude": -122.4065
       },
-      "imageUrl": "/uploads/1782564730928-j8e2xbdg.jpeg",
-      "visionTags": [
-        "Infrastructure",
-        "Urban area",
-        "Damage",
-        "Waste",
-        "Litter",
-        "Concrete",
-        "Asphalt",
-        "Plastic bag",
-        "Road surface"
-      ],
-      "status": "In Progress",
-      "upvotes": 3,
-      "upvotedBy": [
-        "google-khk3trg",
-        "GHLiqQ7I4rTUTSji2K2yMk4FYf62",
-        "MDWQDcISoxNGOADG2hyi2di56Cf1"
-      ],
-      "verifications": 0,
-      "verifiedBy": [],
-      "commentsCount": 0,
+      "imageUrl": "https://images.unsplash.com/photo-1515162816999-a0c47dc192f7?w=600",
+      "visionTags": ["Asphalt", "Road hazard", "Transit lane", "Urban infrastructure"],
+      "status": "Reported",
+      "upvotes": 14,
+      "upvotedBy": ["user-1", "user-2"],
+      "verifications": 3,
+      "verifiedBy": ["citizen-alpha", "citizen-beta"],
+      "commentsCount": 2,
       "reporter": {
-        "uid": "google-khk3trg",
-        "displayName": "Jane Doe",
-        "photoURL": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150"
+        "uid": "usr-sf-1",
+        "displayName": "Elena Rostova",
+        "photoURL": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150"
       },
       "history": [
         {
           "status": "Reported",
-          "timestamp": "2026-06-27T12:52:10.931Z",
-          "note": "Issue reported by citizen."
-        },
+          "timestamp": "2026-06-28T08:30:00.000Z",
+          "note": "Logged via CivicPulse mobile sensor telemetry."
+        }
+      ],
+      "createdAt": "2026-06-28T08:30:00.000Z",
+      "updatedAt": "2026-06-29T09:15:00.000Z"
+    },
+    {
+      "id": "sf-issue-102",
+      "title": "Subterranean Water Main Rupture in Mission District",
+      "description": "Continuous pressurized water leakage escaping through sidewalk expansion joints near Valencia and 18th St. High volume runoff affecting local pedestrian pathways.",
+      "category": "water leak",
+      "severity": 9,
+      "urgencyLevel": "critical",
+      "estimatedResolutionDays": 1,
+      "recommendedAuthority": "San Francisco Public Utilities Commission (SFPUC)",
+      "complaintLetter": "To SFPUC Emergency Response: Subterranean water main failure observed at Valencia & 18th.",
+      "isDuplicate": false,
+      "similarIssues": [],
+      "location": {
+        "address": "650 Valencia St, San Francisco, CA 94110",
+        "latitude": 37.7624,
+        "longitude": -122.4215
+      },
+      "imageUrl": "https://images.unsplash.com/photo-1542013936693-8c463f88e0b0?w=600",
+      "visionTags": ["Water leak", "Sidewalk damage", "Public utility", "Flooding hazard"],
+      "status": "In Progress",
+      "upvotes": 28,
+      "upvotedBy": ["user-3", "user-4"],
+      "verifications": 7,
+      "verifiedBy": ["citizen-gamma"],
+      "commentsCount": 5,
+      "reporter": {
+        "uid": "usr-sf-2",
+        "displayName": "Marcus Chen",
+        "photoURL": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150"
+      },
+      "history": [
         {
           "status": "Reported",
-          "timestamp": "2026-06-27T12:52:23.845Z",
-          "note": "Report finalized and confirmed by citizen."
+          "timestamp": "2026-06-27T14:15:00.000Z",
+          "note": "Citizen submission confirmed by visual AI analysis."
+        },
+        {
+          "status": "In Progress",
+          "timestamp": "2026-06-28T10:00:00.000Z",
+          "note": "SFPUC repair crew dispatched to isolate main valve."
+        }
+      ],
+      "createdAt": "2026-06-27T14:15:00.000Z",
+      "updatedAt": "2026-06-28T10:00:00.000Z"
+    },
+    {
+      "id": "sf-issue-103",
+      "title": "Streetlight Array Outage along Embarcadero Promenade",
+      "description": "Four consecutive decorative LED luminaires are non-functional between Pier 14 and Ferry Building. Creating unlit zones along high-traffic evening pedestrian corridor.",
+      "category": "streetlight",
+      "severity": 6,
+      "urgencyLevel": "medium",
+      "estimatedResolutionDays": 4,
+      "recommendedAuthority": "PG&E / SFPUC Street Lighting Services",
+      "complaintLetter": "To SFPUC Lighting Dept: Report of luminaire grid failure along Embarcadero Promenade.",
+      "isDuplicate": false,
+      "similarIssues": [],
+      "location": {
+        "address": "1 Ferry Building, San Francisco, CA 94111",
+        "latitude": 37.7955,
+        "longitude": -122.3937
+      },
+      "imageUrl": "https://images.unsplash.com/photo-1513694203232-719a280e022f?w=600",
+      "visionTags": ["Streetlight", "Night illumination", "Public safety", "Promenade"],
+      "status": "Reported",
+      "upvotes": 9,
+      "upvotedBy": [],
+      "verifications": 2,
+      "verifiedBy": [],
+      "commentsCount": 1,
+      "reporter": {
+        "uid": "usr-sf-3",
+        "displayName": "Sarah Jenkins",
+        "photoURL": "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150"
+      },
+      "history": [
+        {
+          "status": "Reported",
+          "timestamp": "2026-06-28T21:45:00.000Z",
+          "note": "Automated ticket filed."
+        }
+      ],
+      "createdAt": "2026-06-28T21:45:00.000Z",
+      "updatedAt": "2026-06-28T21:45:00.000Z"
+    },
+    {
+      "id": "sf-issue-104",
+      "title": "Illegal Refuse Dump near North Beach Alleyway",
+      "description": "Accumulation of discarded commercial packaging and construction debris blocking public right-of-way on Kearny St near Columbus Ave.",
+      "category": "waste",
+      "severity": 5,
+      "urgencyLevel": "medium",
+      "estimatedResolutionDays": 2,
+      "recommendedAuthority": "Recology & SF DPW Bureau of Street Sanitation",
+      "complaintLetter": "To SF Sanitation: Requesting immediate dispatch for solid waste removal at North Beach.",
+      "isDuplicate": false,
+      "similarIssues": [],
+      "location": {
+        "address": "1200 Kearny St, San Francisco, CA 94133",
+        "latitude": 37.7981,
+        "longitude": -122.4052
+      },
+      "imageUrl": "https://images.unsplash.com/photo-1530587191325-3db32d826c18?w=600",
+      "visionTags": ["Sanitation", "Debris", "Urban refuse", "Right of way obstruction"],
+      "status": "Resolved",
+      "upvotes": 19,
+      "upvotedBy": [],
+      "verifications": 6,
+      "verifiedBy": [],
+      "commentsCount": 3,
+      "reporter": {
+        "uid": "usr-sf-4",
+        "displayName": "David Vance",
+        "photoURL": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150"
+      },
+      "history": [
+        {
+          "status": "Reported",
+          "timestamp": "2026-06-25T11:20:00.000Z",
+          "note": "Initial report logged."
         },
         {
           "status": "Resolved",
-          "timestamp": "2026-06-28T05:28:27.220Z",
-          "note": "Status updated to Resolved by simulated Municipal Authority Inspector."
-        },
-        {
-          "status": "In Progress",
-          "timestamp": "2026-06-28T05:28:35.521Z",
-          "note": "Status updated to In Progress by simulated Municipal Authority Inspector."
-        },
-        {
-          "status": "In Progress",
-          "timestamp": "2026-06-28T05:33:37.907Z",
-          "note": "Status updated to In Progress by simulated Municipal Authority Inspector."
+          "timestamp": "2026-06-26T16:40:00.000Z",
+          "note": "DPW Rapid Response unit cleared alleyway debris completely."
         }
       ],
-      "createdAt": "2026-06-27T12:52:10.931Z",
-      "updatedAt": "2026-06-28T05:47:21.343Z",
-      "id": "t4ew1684nqm"
+      "createdAt": "2026-06-25T11:20:00.000Z",
+      "updatedAt": "2026-06-26T16:40:00.000Z"
+    },
+    {
+      "id": "sf-issue-105",
+      "title": "Fractured Concrete Sidewalk along Golden Gate Park Edge",
+      "description": "Tree root expansion has lifted concrete slabs by 4 inches along Fulton St at 8th Ave, posing an ADA compliance trip hazard for wheelchair users and pedestrians.",
+      "category": "pothole",
+      "severity": 7,
+      "urgencyLevel": "medium",
+      "estimatedResolutionDays": 10,
+      "recommendedAuthority": "SF DPW Bureau of Urban Forestry & Sidewalk Inspection",
+      "complaintLetter": "To Bureau of Street Use: Sidewalk vertical displacement observed along Fulton corridor.",
+      "isDuplicate": false,
+      "similarIssues": [],
+      "location": {
+        "address": "3200 Fulton St, San Francisco, CA 94118",
+        "latitude": 37.7731,
+        "longitude": -122.4658
+      },
+      "imageUrl": "https://images.unsplash.com/photo-1584463623578-38600d832966?w=600",
+      "visionTags": ["Sidewalk fracture", "Root heave", "ADA obstacle", "Concrete fault"],
+      "status": "Reported",
+      "upvotes": 11,
+      "upvotedBy": [],
+      "verifications": 4,
+      "verifiedBy": [],
+      "commentsCount": 0,
+      "reporter": {
+        "uid": "usr-sf-5",
+        "displayName": "Amina Al-Mansoor",
+        "photoURL": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150"
+      },
+      "history": [
+        {
+          "status": "Reported",
+          "timestamp": "2026-06-28T15:10:00.000Z",
+          "note": "Citizen submission confirmed."
+        }
+      ],
+      "createdAt": "2026-06-28T15:10:00.000Z",
+      "updatedAt": "2026-06-28T15:10:00.000Z"
     }
   ],
   "users": [
     {
-      "uid": "google-1fzmtc4",
-      "displayName": "Jane Doe",
-      "username": "srijaisuryaa",
-      "photoURL": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150",
-      "points": 0,
-      "badges": [],
-      "createdAt": "2026-06-27T09:55:15.569Z",
-      "updatedAt": "2026-06-27T09:55:15.569Z",
-      "id": "google-1fzmtc4"
+      "uid": "usr-sf-1",
+      "displayName": "Elena Rostova",
+      "username": "erostova",
+      "photoURL": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150",
+      "points": 140,
+      "badges": ["First Reporter", "Verified Citizen"]
     },
     {
-      "uid": "google-khk3trg",
-      "displayName": "Jane Doe",
-      "username": "jaisuryaa",
-      "photoURL": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150",
-      "points": 60,
-      "badges": [
-        "First Reporter"
-      ],
-      "createdAt": "2026-06-27T10:42:00.175Z",
-      "updatedAt": "2026-06-28T05:28:27.222Z",
-      "id": "google-khk3trg"
-    },
-    {
-      "uid": "google-pnh2guj",
-      "displayName": "Jane Doe",
-      "username": "jaisuryaa",
-      "photoURL": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150",
-      "points": 0,
-      "badges": [],
-      "createdAt": "2026-06-27T14:14:38.613Z",
-      "updatedAt": "2026-06-27T14:14:38.613Z",
-      "id": "google-pnh2guj"
-    },
-    {
-      "uid": "google-3mdtib1",
-      "displayName": "Jane Doe",
-      "username": "srijaisuryaa",
-      "photoURL": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150",
-      "points": 0,
-      "badges": [],
-      "createdAt": "2026-06-27T14:15:05.026Z",
-      "updatedAt": "2026-06-27T14:15:05.026Z",
-      "id": "google-3mdtib1"
+      "uid": "usr-sf-2",
+      "displayName": "Marcus Chen",
+      "username": "mchen_sf",
+      "photoURL": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150",
+      "points": 210,
+      "badges": ["Top Verifier", "Civic Sentinel"]
     }
   ],
   "comments": []

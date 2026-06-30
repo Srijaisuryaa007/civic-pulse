@@ -158,7 +158,9 @@ router.post('/', async (req, res) => {
       location: {
         address,
         latitude: lat1,
-        longitude: lon1
+        longitude: lon1,
+        country: req.body.country || '',
+        city: req.body.city || ''
       },
       imageUrl,
       visionTags: (visionTags || []).filter(Boolean),

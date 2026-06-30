@@ -9,6 +9,7 @@ import { MapMarker } from '../components/ui/MapMarker';
 import { IssueCard } from '../components/ui/IssueCard';
 import { useAuth } from '../context/AuthContext';
 import { IconMapPin, IconX } from '@tabler/icons-react';
+import Gta5MapFlightOverlay from '../components/ui/Gta5MapFlightOverlay';
 
 // Custom component to handle centering
 function MapController({ center }) {
@@ -27,20 +28,110 @@ export default function MapView() {
   const [activeIssue, setActiveIssue] = useState(null);
   const [categoryFilter, setCategoryFilter] = useState('all');
 
+  const userLat = Number(user?.locationCoordinates?.lat);
+  const userLng = Number(user?.locationCoordinates?.lng);
+  const hasUserLocation = !isNaN(userLat) && !isNaN(userLng) && (userLat !== 0 || userLng !== 0);
+
   const filteredIssues = useMemo(() => {
-    return issues.filter(issue => {
+    let baseIssues = issues.filter(issue => {
       if (!issue.location?.latitude || !issue.location?.longitude) return false;
       if (categoryFilter !== 'all') {
         return issue.category?.toLowerCase() === categoryFilter.toLowerCase();
       }
       return true;
     });
-  }, [issues, categoryFilter]);
 
-  const defaultCenter = [40.7128, -74.0060]; // NY default if no issues
-  const center = filteredIssues.length > 0 
-    ? [filteredIssues[0].location.latitude, filteredIssues[0].location.longitude] 
-    : defaultCenter;
+    if (hasUserLocation) {
+      const nearbyCount = baseIssues.filter(i => 
+        Math.abs(i.location.latitude - userLat) < 0.8 && Math.abs(i.location.longitude - userLng) < 0.8
+      ).length;
+
+      // If no issues exist right near the user's city (e.g. Coimbatore or Chennai), generate localized mock issues around their city!
+      if (nearbyCount === 0) {
+        const cityName = user?.city || 'Local Sector';
+        const generatedLocalIssues = [
+          {
+            id: 'local-gen-1',
+            title: `Severe Asphalt Pothole on Main Corridor`,
+            description: `Deep 8-inch road crater causing traffic disruption across ${cityName} arterial road. Requires immediate asphalt repair.`,
+            category: 'Pothole',
+            severity: 9,
+            status: 'Pending Verification',
+            upvotes: 42,
+            location: {
+              latitude: Number((userLat + 0.008).toFixed(4)),
+              longitude: Number((userLng - 0.006).toFixed(4)),
+              address: `Arterial Road, ${cityName}`
+            },
+            reporter: { displayName: "Municipal automated telemetry", photoURL: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150" }
+          },
+          {
+            id: 'local-gen-2',
+            title: `Underground Water Main Leak`,
+            description: `Constant high-pressure water loss pooling along residential sector in ${cityName}.`,
+            category: 'Water Leak',
+            severity: 8,
+            status: 'Verified',
+            upvotes: 35,
+            location: {
+              latitude: Number((userLat - 0.005).toFixed(4)),
+              longitude: Number((userLng + 0.009).toFixed(4)),
+              address: `North Sector, ${cityName}`
+            },
+            reporter: { displayName: "Karthik R.", photoURL: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150" }
+          },
+          {
+            id: 'local-gen-3',
+            title: `High-Mast Streetlight Outage`,
+            description: `Multiple LED streetlamp fixtures inactive along major junction in ${cityName}.`,
+            category: 'Streetlight',
+            severity: 6,
+            status: 'In Progress',
+            upvotes: 19,
+            location: {
+              latitude: Number((userLat + 0.012).toFixed(4)),
+              longitude: Number((userLng + 0.011).toFixed(4)),
+              address: `Central Junction, ${cityName}`
+            },
+            reporter: { displayName: "Ananya S.", photoURL: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150" }
+          },
+          {
+            id: 'local-gen-4',
+            title: `Overflowing Municipal Refuse Bin`,
+            description: `Solid waste accumulation requiring immediate dispatch truck pickup in ${cityName}.`,
+            category: 'Waste',
+            severity: 7,
+            status: 'Pending Verification',
+            upvotes: 28,
+            location: {
+              latitude: Number((userLat - 0.011).toFixed(4)),
+              longitude: Number((userLng - 0.007).toFixed(4)),
+              address: `Market District, ${cityName}`
+            },
+            reporter: { displayName: "Civic Watch Dog", photoURL: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150" }
+          }
+        ];
+
+        const filteredGen = generatedLocalIssues.filter(issue => {
+          if (categoryFilter !== 'all') {
+            return issue.category?.toLowerCase() === categoryFilter.toLowerCase();
+          }
+          return true;
+        });
+
+        return [...baseIssues, ...filteredGen];
+      }
+    }
+
+    return baseIssues;
+  }, [issues, categoryFilter, userLat, userLng, hasUserLocation, user?.city]);
+
+  const defaultCenter = [40.7128, -74.0060];
+  const center = hasUserLocation 
+    ? [userLat, userLng]
+    : (filteredIssues.length > 0 
+        ? [filteredIssues[0].location.latitude, filteredIssues[0].location.longitude] 
+        : defaultCenter);
 
   const createIcon = (issue) => {
     const isHighSev = (Number(issue.severity) || 1) >= 7 && issue.status !== 'Resolved';
@@ -70,8 +161,11 @@ export default function MapView() {
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a>'
             url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+            noWrap={true}
+            bounds={[[-90, -180], [90, 180]]}
           />
           <MapController center={center} />
+          <Gta5MapFlightOverlay />
           
           {filteredIssues.map(issue => (
             <Marker 
@@ -86,7 +180,7 @@ export default function MapView() {
         </MapContainer>
 
         {/* Floating UI: Top Left Filters */}
-        <div className="absolute top-4 left-4 z-[10] flex gap-2">
+        <div data-tour="map-filters" className="absolute top-4 left-4 z-[10] flex gap-2 flex-wrap">
           {categories.map(cat => (
             <button
               key={cat}
@@ -105,6 +199,7 @@ export default function MapView() {
         {/* Floating UI: Top Right Actions */}
         <div className="absolute top-4 right-4 z-[10] flex flex-col gap-2">
           <button
+            data-tour="report-btn"
             onClick={() => navigate('/report')}
             className="px-5 py-2.5 bg-inverted text-white rounded-full text-[13px] font-medium shadow-lg lift-hover flex items-center gap-2"
           >

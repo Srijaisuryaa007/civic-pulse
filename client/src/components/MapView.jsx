@@ -1,6 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import { Eye, AlertTriangle, Clock, MapPin } from 'lucide-react';
+import Gta5FlightManager from './ui/Gta5FlightManager';
+import { GlobalTabSwitchLoader, CompassMappingLoader } from './ui/CivicLoaders';
 
 const MAP_STYLES = {
   dark: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
@@ -17,6 +20,7 @@ const MAP_ATTRIBUTIONS = {
 };
 
 export default function MapView({ issues, loading, showHeatmap, activeCategory }) {
+  const { user } = useAuth();
   const mapRef = useRef(null);
   const navigate = useNavigate();
   const [mapEngine, setMapEngine] = useState('none'); // 'google', 'leaflet', or 'none'
@@ -69,22 +73,19 @@ export default function MapView({ issues, loading, showHeatmap, activeCategory }
   const loadLeafletScripts = () => {
     return new Promise((resolve, reject) => {
       if (window.L) {
-        resolve(window.L);
+        resolve();
         return;
       }
-      // Inject CSS
+
       const link = document.createElement('link');
       link.rel = 'stylesheet';
       link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
-      link.id = 'leaflet-css';
       document.head.appendChild(link);
 
-      // Inject JS
       const script = document.createElement('script');
       script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
-      script.id = 'leaflet-js';
-      script.onload = () => resolve(window.L);
-      script.onerror = reject;
+      script.onload = () => resolve();
+      script.onerror = () => reject(new Error('Leaflet script failed to load'));
       document.head.appendChild(script);
     });
   };
@@ -93,10 +94,13 @@ export default function MapView({ issues, loading, showHeatmap, activeCategory }
   useEffect(() => {
     if (mapEngine !== 'google' || !mapRef.current || googleMap) return;
 
-    // Default center (San Francisco or user current location)
-    const defaultCenter = { lat: 37.7749, lng: -122.4194 };
+    // Default center (user onboarded coordinates or San Francisco fallback)
+    const userLat = Number(user?.locationCoordinates?.lat);
+    const userLng = Number(user?.locationCoordinates?.lng);
+    const defaultCenter = (!isNaN(userLat) && !isNaN(userLng) && userLat !== 0)
+      ? { lat: userLat, lng: userLng }
+      : { lat: 37.7749, lng: -122.4194 };
     
-    // Check local storage for last reported center, or use default
     let center = defaultCenter;
     if (issues && issues.length > 0) {
       center = {
@@ -127,10 +131,16 @@ export default function MapView({ issues, loading, showHeatmap, activeCategory }
     if (mapEngine !== 'leaflet' || !mapRef.current || leafletMap) return;
 
     const L = window.L;
-    const defaultCenter = [37.7749, -122.4194];
+    const userLat = Number(user?.locationCoordinates?.lat);
+    const userLng = Number(user?.locationCoordinates?.lng);
+    const hasUserLocation = !isNaN(userLat) && !isNaN(userLng) && (userLat !== 0 || userLng !== 0);
+    const defaultCenter = hasUserLocation
+      ? [userLat, userLng]
+      : [37.7749, -122.4194];
+    
     let center = defaultCenter;
 
-    if (issues && issues.length > 0) {
+    if (!hasUserLocation && issues && issues.length > 0) {
       center = [
         Number(issues[0].location?.latitude) || defaultCenter[0],
         Number(issues[0].location?.longitude) || defaultCenter[1]
@@ -153,7 +163,12 @@ export default function MapView({ issues, loading, showHeatmap, activeCategory }
     const initialUrl = MAP_STYLES[mapStyle] || MAP_STYLES.dark;
     const initialLayer = L.tileLayer(initialUrl, {
       maxZoom: mapStyle === 'terrain' ? 18 : 19,
-      attribution: MAP_ATTRIBUTIONS[mapStyle] || '© CartoDB'
+      attribution: MAP_ATTRIBUTIONS[mapStyle] || '© CartoDB',
+      noWrap: true,
+      bounds: [
+        [-90, -180],
+        [90, 180]
+      ]
     }).addTo(map);
     tileLayerRef.current = initialLayer;
 
@@ -170,7 +185,12 @@ export default function MapView({ issues, loading, showHeatmap, activeCategory }
     const nextUrl = MAP_STYLES[mapStyle] || MAP_STYLES.dark;
     const nextLayer = L.tileLayer(nextUrl, {
       maxZoom: mapStyle === 'terrain' ? 18 : 19,
-      attribution: MAP_ATTRIBUTIONS[mapStyle] || '© CartoDB'
+      attribution: MAP_ATTRIBUTIONS[mapStyle] || '© CartoDB',
+      noWrap: true,
+      bounds: [
+        [-90, -180],
+        [90, 180]
+      ]
     }).addTo(leafletMap);
     tileLayerRef.current = nextLayer;
   }, [mapStyle, leafletMap]);
@@ -427,7 +447,7 @@ export default function MapView({ issues, loading, showHeatmap, activeCategory }
   ];
 
   return (
-    <div className="relative h-full w-full rounded-[32px] overflow-hidden border border-stone bg-[#FDFDFB] shadow-inner">
+    <div className="relative h-full w-full bg-[#FDFDFB]">
       {/* Map Element */}
       <div ref={mapRef} className="h-full w-full z-10" />
 
@@ -453,11 +473,16 @@ export default function MapView({ issues, loading, showHeatmap, activeCategory }
       </div>
 
       {(loading || mapEngine === 'none') && (
-        <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-paper/60 backdrop-blur-sm">
-          <MapPin className="h-10 w-10 text-terracotta animate-bounce mb-2" />
-          <p className="text-xs font-mono uppercase tracking-widest text-forest font-bold">Loading Map...</p>
-        </div>
+        <CompassMappingLoader
+          loading={true}
+          error={null}
+          onRetry={() => window.location.reload()}
+          text="Calibrating Geospatial Engine..."
+          isOverlay={true}
+        />
       )}
+
+      <Gta5FlightManager leafletMap={leafletMap} googleMap={googleMap} />
     </div>
   );
 }

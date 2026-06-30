@@ -78,9 +78,9 @@ export default function IssueDetail() {
 
   if (loadingIssue) {
     return (
-      <div className="mx-auto max-w-4xl px-4 py-12 text-center bg-paper">
-        <div className="h-10 w-10 bg-neutral-100 rounded-full animate-bounce mx-auto mb-4 border border-stone" />
-        <p className="text-xs font-mono uppercase tracking-widest text-neutral-450">Loading file index...</p>
+      <div className="mx-auto max-w-4xl px-4 py-16 text-center bg-paper">
+        <div className="w-8 h-8 rounded-full border-2 border-stone border-t-[#D4AF37] animate-spin mx-auto mb-3" />
+        <p className="text-xs font-mono uppercase tracking-widest text-neutral-450">Loading issue record...</p>
       </div>
     );
   }

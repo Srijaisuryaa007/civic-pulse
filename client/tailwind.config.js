@@ -16,23 +16,39 @@ export default {
         'border-dark': 'rgba(247, 246, 242, 0.15)',
         muted: '#737373',
         
-        // Category Accents
+        // Editorial & Botanical mapped to Luxury Tokens
+        paper: '#F9F8F6',        // Warm Alabaster
+        forest: '#1A1A1A',       // Rich Charcoal
+        sage: '#6C6863',         // Warm Grey
+        terracotta: '#D4AF37',   // Metallic Gold
+        clay: '#EBE5DE',         // Pale Taupe
+        stone: '#EBE5DE',        // Pale Taupe
+        
+        // Explicit Editorial Palette
+        alabaster: '#F9F8F6',
+        charcoal: '#1A1A1A',
+        taupe: '#EBE5DE',
+        gold: '#D4AF37',
+        warmgrey: '#6C6863',
+        
+        // Category Accents (Refined & Muted for Luxury feel)
         accent: {
-          pothole: '#EF4444',     // Warm Red
-          streetlight: '#3B82F6', // Electric Blue
-          garbage: '#F59E0B',     // Amber
-          water: '#14B8A6',       // Teal
+          pothole: '#D4AF37',     // Gold
+          streetlight: '#4A5568', // Slate Charcoal
+          garbage: '#8C7B65',     // Warm Bronze
+          water: '#5A6B7C',       // Muted Steel Blue
         },
         
-        // Status Colors mapped for utility
+        // Status Colors mapped for luxury editorial feel
         status: {
-          reported: '#EAB308', // Yellow
-          progress: '#3B82F6', // Blue
-          resolved: '#22C55E', // Green
+          reported: '#D4AF37', // Gold
+          progress: '#6C6863', // Warm Grey
+          resolved: '#1A1A1A', // Rich Charcoal
         },
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+        serif: ['"Playfair Display"', 'Georgia', 'serif'],
       },
       borderWidth: {
         hairline: '0.5px',

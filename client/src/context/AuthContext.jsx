@@ -9,6 +9,7 @@ import {
 } from 'firebase/auth';
 import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db, googleProvider } from '../firebase';
+import { GlobalTabSwitchLoader } from '../components/ui/CivicLoaders';
 
 const AuthContext = createContext(null);
 
@@ -20,6 +21,10 @@ export function AuthProvider({ children }) {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       try {
         if (firebaseUser) {
+          // Check local cache for persistence across offline or simulation states
+          const localCache = localStorage.getItem(`civicpulse_profile_${firebaseUser.uid}`);
+          const parsedCache = localCache ? JSON.parse(localCache) : {};
+
           // Create or update user document in Firestore
           const userRef = doc(db, 'users', firebaseUser.uid);
           const userSnap = await getDoc(userRef);
@@ -31,7 +36,14 @@ export function AuthProvider({ children }) {
               email: firebaseUser.email,
               displayName: firebaseUser.displayName || 'Citizen',
               photoURL: firebaseUser.photoURL || null,
-              username: '', // Let them set it later
+              username: parsedCache.username || '',
+              country: parsedCache.country || '',
+              region: parsedCache.region || '',
+              city: parsedCache.city || '',
+              ward: parsedCache.ward || '',
+              age: parsedCache.age || null,
+              locationCoordinates: parsedCache.locationCoordinates || null,
+              onboardingCompleted: parsedCache.onboardingCompleted || false,
               xp: 0,
               role: 'citizen',
               reportsCount: 0,
@@ -48,16 +60,19 @@ export function AuthProvider({ children }) {
             );
           }
           
-          // Merge Firebase user + Firestore profile
-          const profileSnap = await getDoc(userRef); // Fetch again to get merged data including timestamps
+          // Merge Firebase user + Firestore profile + local cache
+          const profileSnap = await getDoc(userRef);
           const profile = profileSnap.exists() ? profileSnap.data() : {};
-          setUser({ ...firebaseUser, ...profile });
+          const mergedUser = { ...firebaseUser, ...profile, ...parsedCache };
+          setUser(mergedUser);
         } else {
           setUser(null);
         }
       } catch (error) {
         console.error("Auth state change error:", error);
         if (firebaseUser) {
+          const localCache = localStorage.getItem(`civicpulse_profile_${firebaseUser.uid}`);
+          const parsedCache = localCache ? JSON.parse(localCache) : {};
           setUser({
             ...firebaseUser,
             role: 'citizen',
@@ -66,7 +81,8 @@ export function AuthProvider({ children }) {
             verifiedCount: 0,
             badges: [],
             displayName: firebaseUser.displayName || 'Citizen',
-            photoURL: firebaseUser.photoURL || null
+            photoURL: firebaseUser.photoURL || null,
+            ...parsedCache
           });
         } else {
           setUser(null);
@@ -103,11 +119,56 @@ export function AuthProvider({ children }) {
     try {
       const userRef = doc(db, 'users', user.uid);
       await setDoc(userRef, { username }, { merge: true });
-      setUser(prev => ({ ...prev, username }));
+      const updated = { ...user, username };
+      setUser(updated);
+      localStorage.setItem(`civicpulse_profile_${user.uid}`, JSON.stringify(updated));
     } catch (error) {
       console.error("Failed to set username:", error);
     }
     setLoading(false);
+  };
+
+  const completeOnboarding = async (onboardingData) => {
+    if (!user) return;
+    setLoading(true);
+    try {
+      const payload = {
+        username: onboardingData.username || user.username || '',
+        country: onboardingData.country || '',
+        region: onboardingData.region || '',
+        city: onboardingData.city || '',
+        ward: onboardingData.ward || '',
+        age: Number(onboardingData.age) || null,
+        locationCoordinates: onboardingData.locationCoordinates || null,
+        onboardingCompleted: true
+      };
+
+      const updatedUser = { ...user, ...payload };
+      setUser(updatedUser);
+      localStorage.setItem(`civicpulse_profile_${user.uid}`, JSON.stringify(updatedUser));
+
+      try {
+        const userRef = doc(db, 'users', user.uid);
+        await setDoc(userRef, payload, { merge: true });
+        // Also sync to backend sim-user if needed
+        fetch('/api/issues/sim-user', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            uid: user.uid,
+            displayName: user.displayName,
+            username: payload.username,
+            photoURL: user.photoURL
+          })
+        }).catch(() => {});
+      } catch (firestoreErr) {
+        console.warn("Firestore save failed during onboarding, relied on localStorage persistence:", firestoreErr);
+      }
+    } catch (err) {
+      console.error("Error completing onboarding:", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const refreshPoints = async () => {
@@ -117,7 +178,9 @@ export function AuthProvider({ children }) {
       const userSnap = await getDoc(userRef);
       if (userSnap.exists()) {
         const profile = userSnap.data();
-        setUser(prev => ({ ...prev, ...profile }));
+        const localCache = localStorage.getItem(`civicpulse_profile_${user.uid}`);
+        const parsedCache = localCache ? JSON.parse(localCache) : {};
+        setUser(prev => ({ ...prev, ...profile, ...parsedCache }));
       }
     } catch (e) {
       console.error(e);
@@ -129,13 +192,10 @@ export function AuthProvider({ children }) {
       user, loading, 
       loginWithGoogle, loginWithEmail, 
       registerWithEmail, logout,
-      setUsername, refreshPoints
+      setUsername, completeOnboarding, refreshPoints
     }}>
       {loading ? (
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: '#080808' }}>
-          <div style={{ width: '40px', height: '40px', borderRadius: '50%', border: '3px solid #333', borderTopColor: '#D4AF37', animation: 'spin 1s linear infinite' }} />
-          <style>{`@keyframes spin { 100% { transform: rotate(360deg); } }`}</style>
-        </div>
+        <GlobalTabSwitchLoader text="Connecting to CivicPulse..." />
       ) : children}
     </AuthContext.Provider>
   );

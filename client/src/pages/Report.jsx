@@ -17,10 +17,10 @@ export default function Report() {
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState('');
 
-  // Location states
-  const [lat, setLat] = useState('');
-  const [lng, setLng] = useState('');
-  const [address, setAddress] = useState('');
+  // Location states initialized to citizen jurisdiction
+  const [lat, setLat] = useState(() => user?.locationCoordinates?.lat?.toString() || '');
+  const [lng, setLng] = useState(() => user?.locationCoordinates?.lng?.toString() || '');
+  const [address, setAddress] = useState(() => user?.city ? `${user.city}, ${user.country || ''}` : '');
   const [detectingLocation, setDetectingLocation] = useState(false);
 
   // AI Pipeline states
@@ -145,7 +145,9 @@ export default function Report() {
         longitude: lng,
         userId: user.uid,
         userName: user.displayName,
-        userPhoto: user.photoURL
+        userPhoto: user.photoURL,
+        country: user?.country || '',
+        city: user?.city || ''
       };
 
       const response = await fetch('/api/issues', {
@@ -194,7 +196,9 @@ export default function Report() {
         location: { 
           latitude: Number(lat), 
           longitude: Number(lng), 
-          address: address 
+          address: address,
+          country: user?.country || '',
+          city: user?.city || ''
         },
         imageUrl: aiData.imageUrl,
         complaintLetter: aiData.complaintLetter || '',
@@ -368,19 +372,13 @@ export default function Report() {
           <div className="py-10">
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-sage/10 text-sage mb-4 relative border border-sage/20 animate-pulse">
               <Sparkles className="h-7 w-7" />
-              {/* Halftone simulation */}
-              <div className="absolute inset-0 halftone-placeholder pointer-events-none opacity-5 rounded-full" />
             </div>
             <h3 className="font-serif text-2xl font-bold text-forest">
               {uploading ? 'Uploading Evidence...' : 'Executing AI Analytics...'}
             </h3>
-            {uploadError ? (
+            {uploadError && (
               <p className="text-xs font-mono uppercase tracking-widest text-terracotta mt-2 max-w-sm mx-auto leading-relaxed">
                 {uploadError}
-              </p>
-            ) : (
-              <p className="text-xs font-mono uppercase tracking-widest text-neutral-450 mt-2 max-w-sm mx-auto leading-relaxed">
-                {uploading ? 'Transferring file to secure vault.' : 'Google Vision extraction & Gemini 1.5 parsing active.'}
               </p>
             )}
           </div>

@@ -4,10 +4,12 @@ import { useIssues } from '../context/IssueContext';
 import { useAuth } from '../context/AuthContext';
 import { IconSearch, IconChevronLeft, IconChevronRight, IconFilter } from '@tabler/icons-react';
 import { IssueCard } from '../components/ui/IssueCard';
+import { SkeletonCard } from '../components/ui/SkeletonCard';
 import { StatusChip } from '../components/ui/StatusChip';
+import { CompassMappingLoader } from '../components/ui/CivicLoaders';
 
 export default function Issues() {
-  const { issues, loading, upvoteIssue } = useIssues();
+  const { issues, loading, error, refreshIssues, upvoteIssue } = useIssues();
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -110,16 +112,33 @@ export default function Issues() {
           
           {/* Main Feed: 2-col masonry */}
           <div className="lg:col-span-2">
-            {loading ? (
-              <div className="columns-1 sm:columns-2 gap-6">
-                {[1, 2, 3, 4].map(idx => (
-                  <div key={idx} className="h-[400px] w-full bg-white border border-border rounded-[14px] animate-pulse mb-6 break-inside-avoid" />
-                ))}
-              </div>
-            ) : filtered.length === 0 ? (
-              <div className="text-center py-20 bg-white border border-border rounded-[14px]">
-                <h3 className="text-lg font-medium text-inverted">No issues here yet</h3>
-                <p className="text-[13px] text-muted mt-2">Be the first to report one in this area.</p>
+            {error ? (
+              <CompassMappingLoader loading={false} error={error} onRetry={refreshIssues || (() => window.location.reload())} isOverlay={false} />
+            ) : loading ? (
+              <CompassMappingLoader loading={true} error={null} onRetry={refreshIssues || (() => window.location.reload())} text="Loading Issue Feed..." isOverlay={false} />
+            ) : paginatedIssues.length === 0 ? (
+              <div className="text-center py-24 px-6 bg-[#F9F8F6] border border-[#EBE5DE] rounded-none my-6 relative overflow-hidden shadow-soft">
+                <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(212,175,55,0.03)_1px,transparent_1px)] [background-size:20px_20px] pointer-events-none" />
+                <div className="relative z-10 max-w-lg mx-auto">
+                  <span className="inline-block text-[11px] font-mono uppercase tracking-[0.2em] font-bold text-[#D4AF37] mb-3">
+                    {user?.city ? `${user.city} Registry` : 'Unpopulated Jurisdiction'}
+                  </span>
+                  <h3 className="font-serif text-3xl sm:text-4xl font-bold text-[#1A1A1A] tracking-tight">
+                    No Issues Reported in Your Area Yet
+                  </h3>
+                  <p className="text-sm font-sans text-[#6C6863] mt-3 leading-relaxed">
+                    Be the first citizen hero to register an infrastructure audit or municipal road hazard in your locality. Your report sets the standard for civic accountability.
+                  </p>
+                  <div className="mt-8">
+                    <Link
+                      to="/report"
+                      className="inline-flex items-center gap-2 px-8 py-3.5 bg-[#1A1A1A] text-[#FFFFFF] hover:bg-[#D4AF37] hover:text-[#1A1A1A] font-mono text-xs uppercase tracking-[0.2em] font-bold transition-all duration-300 shadow-soft"
+                    >
+                      <span>File First Municipal Audit</span>
+                      <span>→</span>
+                    </Link>
+                  </div>
+                </div>
               </div>
             ) : (
               <>

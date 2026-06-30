@@ -1,0 +1,40 @@
+.shuffle-parent {
+  display: inline-flex !important;
+  flex-wrap: nowrap !important;
+  white-space: nowrap !important;
+  word-break: keep-all !important;
+  will-change: transform;
+  line-height: inherit;
+  visibility: hidden;
+  align-items: center;
+}
+
+.shuffle-parent.is-ready {
+  visibility: visible;
+}
+
+.shuffle-word {
+  display: inline-flex !important;
+  flex-wrap: nowrap !important;
+  white-space: nowrap !important;
+}
+
+.shuffle-char-wrapper {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: baseline;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.shuffle-char-wrapper > span {
+  display: inline-flex;
+  will-change: transform;
+}
+
+.shuffle-char {
+  line-height: inherit;
+  display: inline-block;
+  text-align: center;
+  flex-shrink: 0;
+}

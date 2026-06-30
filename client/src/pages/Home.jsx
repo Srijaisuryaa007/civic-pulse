@@ -20,7 +20,11 @@ export default function Home() {
   useEffect(() => {
     const fetchDashboardStats = async () => {
       try {
-        const res = await fetch('/api/analytics/dashboard');
+        const queryParams = new URLSearchParams({
+          country: user?.country || '',
+          city: user?.city || ''
+        }).toString();
+        const res = await fetch(`/api/analytics/dashboard?${queryParams}`);
         if (res.ok) {
           const data = await res.json();
           setStats({
@@ -30,18 +34,17 @@ export default function Home() {
           });
         }
       } catch (e) {
-        // Fallback calculations
         const resCount = issues.filter(i => i.status === 'Resolved').length;
         setStats({
           resolved: resCount,
-          citizensHelped: resCount * 12 + issues.length,
-          neighborhoodsCovered: Math.max(1, Math.ceil(issues.length / 3))
+          citizensHelped: resCount * 14 + issues.length * 8,
+          neighborhoodsCovered: new Set(issues.map(i => i.location?.address?.split(',')[0])).size
         });
       }
     };
 
     fetchDashboardStats();
-  }, [issues]);
+  }, [issues, user?.country, user?.city]);
 
   const categories = [
     { id: 'all', name: 'All Issues' },
@@ -54,34 +57,34 @@ export default function Home() {
   return (
     <div className="relative flex flex-col h-[calc(100vh-4rem)] overflow-hidden bg-paper">
       
-      {/* 1. Header Stats Bar (Soft Botanical Grids) */}
-      <div className="bg-paper border-b border-stone px-4 py-3 z-20 transition-all duration-300">
+      {/* 1. Header Stats Bar */}
+      <div className="bg-[#F9F8F6] border-b border-[#EBE5DE] px-4 py-3 z-20 transition-all duration-300">
         <div className="mx-auto max-w-7xl flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-sage animate-ping" />
-            <h2 className="text-xs font-mono uppercase tracking-wider text-neutral-500">Hyperlocal Status</h2>
+          <div className="flex items-center gap-2.5">
+            <span className="h-2 w-2 rounded-full bg-[#D4AF37] animate-pulse" />
+            <h2 className="text-[11px] font-sans font-semibold uppercase tracking-[0.15em] text-[#6C6863]">Hyperlocal Status</h2>
           </div>
           
-          <div className="flex items-center gap-6 sm:gap-10 font-mono text-xs sm:text-sm uppercase tracking-wider text-forest">
+          <div className="flex items-center gap-6 sm:gap-10 font-sans text-[11px] uppercase tracking-[0.15em] font-semibold text-[#6C6863]">
             <div className="flex items-center gap-2">
-              <div className="p-1 rounded-full bg-sage/10 text-sage">
+              <div className="p-1 rounded-full bg-[#D4AF37]/15 text-[#D4AF37]">
                 <CheckCircle2 className="h-4 w-4" />
               </div>
-              <span>Resolved: <strong className="font-bold text-xs font-mono">{stats.resolved}</strong></span>
+              <span>Resolved: <strong className="font-serif font-bold text-sm text-[#1A1A1A] ml-1">{stats.resolved}</strong></span>
             </div>
 
             <div className="flex items-center gap-2">
-              <div className="p-1 rounded-full bg-sage/10 text-sage">
+              <div className="p-1 rounded-full bg-[#1A1A1A]/10 text-[#1A1A1A]">
                 <Users className="h-4 w-4" />
               </div>
-              <span>Citizens Helped: <strong className="font-bold text-xs font-mono">{stats.citizensHelped}</strong></span>
+              <span>Citizens Helped: <strong className="font-serif font-bold text-sm text-[#1A1A1A] ml-1">{stats.citizensHelped}</strong></span>
             </div>
 
             <div className="flex items-center gap-2">
-              <div className="p-1 rounded-full bg-sage/10 text-sage">
+              <div className="p-1 rounded-full bg-[#D4AF37]/15 text-[#D4AF37]">
                 <Leaf className="h-4 w-4" />
               </div>
-              <span>Wards: <strong className="font-bold text-xs font-mono">{stats.neighborhoodsCovered}</strong></span>
+              <span>Wards: <strong className="font-serif font-bold text-sm text-[#1A1A1A] ml-1">{stats.neighborhoodsCovered}</strong></span>
             </div>
           </div>
         </div>
@@ -101,10 +104,10 @@ export default function Home() {
             <button
               key={cat.id}
               onClick={() => setActiveCategory(cat.id)}
-              className={`flex items-center gap-1.5 px-4.5 py-2.5 text-xs font-mono uppercase tracking-wider border transition-all duration-500 ${
+              className={`flex items-center gap-1.5 px-4 py-2.5 text-[11px] font-sans uppercase tracking-[0.15em] font-semibold border transition-all duration-300 ${
                 activeCategory === cat.id
-                  ? 'bg-forest text-white border-transparent rounded-full shadow-soft'
-                  : 'bg-paper text-forest hover:bg-neutral-55 border-stone rounded-full shadow-soft'
+                  ? 'bg-[#1A1A1A] text-[#FFFFFF] border-transparent rounded-full shadow-soft'
+                  : 'bg-[#F9F8F6] text-[#1A1A1A] hover:bg-[#EBE5DE]/50 border-[#EBE5DE] rounded-full shadow-soft'
               }`}
             >
               <span>{cat.name}</span>
@@ -112,14 +115,14 @@ export default function Home() {
           ))}
         </div>
 
-        {/* 4. Floating Overlay: Heatmap Toggle (Sage/Pill design) */}
+        {/* 4. Floating Overlay: Heatmap Toggle */}
         <div className="absolute top-4 right-4 z-20">
           <button
             onClick={() => setShowHeatmap(!showHeatmap)}
-            className={`flex items-center gap-1.5 px-4.5 py-2.5 text-xs font-mono uppercase tracking-wider border transition-all duration-500 ${
+            className={`flex items-center gap-1.5 px-4 py-2.5 text-[11px] font-sans uppercase tracking-[0.15em] font-semibold border transition-all duration-300 ${
               showHeatmap
-                ? 'bg-terracotta text-white border-transparent rounded-full shadow-soft-md'
-                : 'bg-paper text-forest hover:bg-neutral-50 border-stone rounded-full shadow-soft'
+                ? 'bg-[#D4AF37] text-[#1A1A1A] border-transparent rounded-full shadow-soft-md'
+                : 'bg-[#F9F8F6] text-[#1A1A1A] hover:bg-[#EBE5DE]/50 border-[#EBE5DE] rounded-full shadow-soft'
             }`}
           >
             <Flame className="h-3.5 w-3.5" />
@@ -127,15 +130,15 @@ export default function Home() {
           </button>
         </div>
 
-        {/* 5. Floating Action Button (FAB) (Pill Circle shape) */}
+        {/* 5. Floating Action Button (FAB) */}
         <div className="absolute bottom-6 right-6 z-25">
           <Link
             to={user ? "/report" : "/login"}
-            className="flex h-12 w-12 items-center justify-center rounded-full bg-forest text-white shadow-soft-md hover:scale-105 active:scale-95 transition-all duration-500 hover:bg-terracotta relative group"
+            className="flex h-12 w-12 items-center justify-center rounded-full bg-[#1A1A1A] text-[#D4AF37] shadow-soft-md hover:scale-105 active:scale-95 transition-all duration-300 hover:bg-[#D4AF37] hover:text-[#1A1A1A] relative group border border-[#D4AF37]/30"
             id="fab-report-button"
           >
             <Plus className="h-5 w-5" />
-            <span className="absolute right-14 bg-forest text-white text-[10px] font-mono uppercase tracking-widest px-3 py-1.5 rounded-full shadow-soft pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
+            <span className="absolute right-14 bg-[#1A1A1A] text-[#FFFFFF] text-[10px] font-sans uppercase tracking-[0.15em] px-3.5 py-2 rounded-full shadow-soft pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap border border-[#EBE5DE]/20">
               Report Issue
             </span>
           </Link>
