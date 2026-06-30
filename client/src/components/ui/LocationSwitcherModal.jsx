@@ -79,17 +79,17 @@ export default function LocationSwitcherModal({ isOpen, onClose }) {
       // 1. Update user context & DB profile
       await completeOnboarding(payload);
 
-      // 2. Dispatch custom event for Gta5FlightManager animation to execute
+      // 2. Set flight zoom target in session storage to trigger Gta5FlightManager on reload
       const flightData = {
         lat: coords.lat,
         lng: coords.lng,
         city: city,
         country: country
       };
-      window.dispatchEvent(new CustomEvent('gta5_flight_trigger', { detail: flightData }));
+      sessionStorage.setItem('trigger_gta5_map_zoom', JSON.stringify(flightData));
 
-      // Close modal
-      onClose();
+      // 3. Reload window to perform clean initialization and trigger flight zoom
+      window.location.reload();
     } catch (err) {
       console.error('Failed to change location:', err);
     } finally {
