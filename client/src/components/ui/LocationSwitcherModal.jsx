@@ -88,8 +88,12 @@ export default function LocationSwitcherModal({ isOpen, onClose }) {
       };
       sessionStorage.setItem('trigger_gta5_map_zoom', JSON.stringify(flightData));
 
-      // 3. Reload window to perform clean initialization and trigger flight zoom
-      window.location.reload();
+      // 3. Redirect to Map View (/app) and force reload to initialize flight zoom
+      const currentPath = window.location.pathname;
+      window.location.href = '/app';
+      if (currentPath === '/app' || currentPath === '/app/') {
+        window.location.reload();
+      }
     } catch (err) {
       console.error('Failed to change location:', err);
     } finally {

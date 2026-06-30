@@ -155,7 +155,7 @@ export default function Gta5FlightManager({ leafletMap, googleMap, onFlightStart
         try {
           const data = JSON.parse(stored);
           sessionStorage.removeItem('trigger_gta5_map_zoom');
-          setTimeout(() => executeFlight(data), 250);
+          setTimeout(() => executeFlight(data), 750); // Give map 750ms to fully settle
         } catch (e) {
           console.warn(e);
         }
