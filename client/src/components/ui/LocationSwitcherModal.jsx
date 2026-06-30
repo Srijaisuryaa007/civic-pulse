@@ -37,24 +37,37 @@ export default function LocationSwitcherModal({ isOpen, onClose }) {
 
   if (!isOpen) return null;
 
-  const handleSearchChange = async (val) => {
-    setSearchQuery(val);
-    if (val.trim().length < 3) {
+  // Debounced search query autocomplete fetcher (improves response time & limits API hits)
+  useEffect(() => {
+    if (searchQuery.trim().length < 3) {
       setSuggestions([]);
       return;
     }
-    setSearching(true);
-    try {
-      const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(val)}&format=json&limit=5&addressdetails=1`);
-      if (res.ok) {
-        const data = await res.json();
-        setSuggestions(data);
+
+    // Skip redundant search if current query is already select-matched
+    const isDirectMatch = suggestions.some(s => s.display_name === searchQuery);
+    if (isDirectMatch) return;
+
+    const timer = setTimeout(async () => {
+      setSearching(true);
+      try {
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(searchQuery)}&format=json&limit=5&addressdetails=1`);
+        if (res.ok) {
+          const data = await res.json();
+          setSuggestions(data);
+        }
+      } catch (e) {
+        console.warn("Location autocomplete error:", e);
+      } finally {
+        setSearching(false);
       }
-    } catch (e) {
-      console.warn("Location search error:", e);
-    } finally {
-      setSearching(false);
-    }
+    }, 450); // 450ms debounce time
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  const handleSearchChange = (val) => {
+    setSearchQuery(val);
   };
 
   const handleSelectSuggestion = (place) => {
@@ -123,18 +136,46 @@ export default function LocationSwitcherModal({ isOpen, onClose }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!country || !city) {
-      alert("Please select a location from the search suggestions dropdown.");
-      return;
-    }
     setLoading(true);
+
+    let targetLat = coordinates.lat;
+    let targetLng = coordinates.lng;
+    let targetCity = city;
+    let targetRegion = region;
+    let targetCountry = country;
+    let targetWard = ward;
+
+    // Direct submit geocoding fallback: If user typed in search query and did not explicitly select 
+    // a suggestion, resolve the top match immediately to secure 100% accuracy.
+    const isExactMatch = searchQuery.toLowerCase().includes(city.toLowerCase());
+    if (!isExactMatch && searchQuery.trim().length >= 3) {
+      try {
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(searchQuery)}&format=json&limit=1&addressdetails=1`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.length > 0) {
+            const firstPlace = data[0];
+            const addr = firstPlace.address || {};
+            targetCity = addr.city || addr.town || addr.village || addr.municipality || addr.county || firstPlace.name || 'Unknown City';
+            targetRegion = addr.state || addr.region || 'Unknown Region';
+            targetCountry = addr.country || 'Unknown Country';
+            targetWard = addr.district || addr.county || addr.suburb || addr.neighbourhood || '';
+            targetLat = Number(firstPlace.lat);
+            targetLng = Number(firstPlace.lon);
+          }
+        }
+      } catch (err) {
+        console.warn("On-the-fly submit geocode error:", err);
+      }
+    }
+
     try {
       const payload = {
-        country,
-        region,
-        city,
-        ward,
-        locationCoordinates: coordinates,
+        country: targetCountry,
+        region: targetRegion,
+        city: targetCity,
+        ward: targetWard,
+        locationCoordinates: { lat: targetLat, lng: targetLng },
         onboardingCompleted: true
       };
 
@@ -143,10 +184,10 @@ export default function LocationSwitcherModal({ isOpen, onClose }) {
 
       // 2. Dispatch custom event for Gta5FlightManager animation to execute in-place
       const flightData = {
-        lat: coordinates.lat,
-        lng: coordinates.lng,
-        city: city,
-        country: country
+        lat: targetLat,
+        lng: targetLng,
+        city: targetCity,
+        country: targetCountry
       };
 
       setTimeout(() => {
