@@ -266,6 +266,9 @@ export default function MapView({ issues, loading, showHeatmap, activeCategory }
 
       googleHeatmapRef.current = heatmap;
     } else {
+      if (googleHeatmapRef.current) {
+        googleHeatmapRef.current.setMap(null);
+      }
       googleHeatmapRef.current = null;
     }
   }, [issues, showHeatmap, activeCategory, googleMap]);

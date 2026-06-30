@@ -135,8 +135,86 @@ const processIssuesData = (rawList, user) => {
     });
   }
 
+  // Dynamically generate realistic local issues if no issues exist in the database for their selected city
+  if (uniqueList.length === 0 && user && user.city && user.locationCoordinates) {
+    const lat = Number(user.locationCoordinates.lat);
+    const lng = Number(user.locationCoordinates.lng);
+    
+    if (!isNaN(lat) && !isNaN(lng) && lat !== 0) {
+      const mockCategories = ['pothole', 'water leak', 'streetlight', 'waste'];
+      const mockDetails = {
+        'pothole': {
+          title: 'Critical Pothole in Center Lane',
+          description: 'A deep pothole has formed in the middle lane, creating a severe hazard for passing vehicles.',
+          authority: 'Municipal Road Maintenance'
+        },
+        'water leak': {
+          title: 'High-Pressure Water Main Leak',
+          description: 'Pressurized water is flowing onto the street from a cracked subterranean pipe.',
+          authority: 'Municipal Water & Sewerage Board'
+        },
+        'streetlight': {
+          title: 'Streetlight Luminaire Failure',
+          description: 'The streetlamp at this intersection has burned out, creating a dark zone at night.',
+          authority: 'Electrical Supply Grid Division'
+        },
+        'waste': {
+          title: 'Illegal Commercial Refuse Dumping',
+          description: 'A large pile of plastic containers and organic waste has been dumped on the public sidewalk.',
+          authority: 'Solid Waste Management Bureau'
+        }
+      };
+
+      for (let i = 0; i < 6; i++) {
+        // Random offset up to ~500 meters
+        const latOffset = (Math.sin(i * 1.5) * 0.004) + 0.001;
+        const lngOffset = (Math.cos(i * 1.5) * 0.004) + 0.001;
+        const category = mockCategories[i % mockCategories.length];
+        const detail = mockDetails[category];
+        const severity = Math.floor((Math.sin(i) + 1.2) * 3) + 4; // range 4-10
+
+        uniqueList.push({
+          id: `mock-issue-${user.city.toLowerCase().replace(/[^a-z]/g, '')}-${i}`,
+          title: `${detail.title} near Sector ${i + 1}`,
+          description: detail.description,
+          category: category,
+          severity: severity,
+          urgencyLevel: severity >= 8 ? 'critical' : 'medium',
+          estimatedResolutionDays: Math.floor(Math.random() * 4) + 1,
+          recommendedAuthority: detail.authority,
+          location: {
+            address: `Sector ${i + 1}, ${user.city}, ${user.country}`,
+            latitude: Number((lat + latOffset).toFixed(5)),
+            longitude: Number((lng + lngOffset).toFixed(5)),
+            city: user.city,
+            country: user.country
+          },
+          imageUrl: category === 'pothole' 
+            ? 'https://images.unsplash.com/photo-1515162816999-a0c47dc192f7?w=600'
+            : category === 'water leak'
+            ? 'https://images.unsplash.com/photo-1542013936693-8c463f88e0b0?w=600'
+            : category === 'streetlight'
+            ? 'https://images.unsplash.com/photo-1513694203232-719a280e022f?w=600'
+            : 'https://images.unsplash.com/photo-1530587191325-3db32d826c18?w=600',
+          status: i % 3 === 0 ? 'Resolved' : i % 3 === 1 ? 'In Progress' : 'Reported',
+          upvotes: Math.floor(Math.random() * 15) + 3,
+          upvotedBy: [],
+          verifications: Math.floor(Math.random() * 5) + 1,
+          verifiedBy: [],
+          commentsCount: Math.floor(Math.random() * 3),
+          reporter: {
+            uid: `usr-mock-${i}`,
+            displayName: `Citizen Hero #${i + 1}`,
+            photoURL: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150'
+          },
+          createdAt: new Date(Date.now() - i * 3600000 * 4).toISOString()
+        });
+      }
+    }
+  }
+
   return uniqueList;
-};
+}
 
 export const IssueProvider = ({ children }) => {
   const { user, refreshPoints } = useAuth();
