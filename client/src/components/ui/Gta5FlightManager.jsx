@@ -59,13 +59,24 @@ export default function Gta5FlightManager({ leafletMap, googleMap, onFlightStart
   const [showDestinationMarker, setShowDestinationMarker] = useState(false);
   const timersRef = useRef([]);
 
+  // Use refs to track latest map instances to avoid stale closures in timeouts
+  const leafletMapRef = useRef(leafletMap);
+  const googleMapRef = useRef(googleMap);
+
+  useEffect(() => {
+    leafletMapRef.current = leafletMap;
+    googleMapRef.current = googleMap;
+  }, [leafletMap, googleMap]);
+
   const clearTimers = () => {
     timersRef.current.forEach(t => clearTimeout(t));
     timersRef.current = [];
   };
 
   const executeFlight = (data) => {
-    const map = leafletMap || googleMap;
+    const activeLeafletMap = leafletMapRef.current;
+    const activeGoogleMap = googleMapRef.current;
+    const map = activeLeafletMap || activeGoogleMap;
     if (!map || !data) return;
 
     clearTimers();
@@ -81,23 +92,23 @@ export default function Gta5FlightManager({ leafletMap, googleMap, onFlightStart
     if (onFlightStart) onFlightStart();
     playGentleMelody();
 
-    if (leafletMap) {
+    if (activeLeafletMap) {
       // Step 1: Instantly jump high to continental satellite orbit (Zoom 3)
-      leafletMap.stop();
-      leafletMap.setView([lat, lng], 3, { animate: false });
+      activeLeafletMap.stop();
+      activeLeafletMap.setView([lat, lng], 3, { animate: false });
 
       // Step 2: Trigger Leaflet native flyTo down to target zoom 15 with easing
       timersRef.current.push(setTimeout(() => {
-        leafletMap.flyTo([lat, lng], 15, {
+        activeLeafletMap.flyTo([lat, lng], 15, {
           duration: 2.3,
           easeLinearity: 0.15
         });
       }, 100));
-    } else if (googleMap) {
-      googleMap.setZoom(3);
-      googleMap.panTo({ lat, lng });
+    } else if (activeGoogleMap) {
+      activeGoogleMap.setZoom(3);
+      activeGoogleMap.panTo({ lat, lng });
       timersRef.current.push(setTimeout(() => {
-        googleMap.setZoom(15);
+        activeGoogleMap.setZoom(15);
       }, 1200));
     }
 
@@ -125,13 +136,14 @@ export default function Gta5FlightManager({ leafletMap, googleMap, onFlightStart
 
   const finishFlight = (lat, lng) => {
     clearTimers();
-    const map = leafletMap || googleMap;
-    if (leafletMap && lat !== undefined && lng !== undefined) {
-      leafletMap.stop();
-      leafletMap.setView([lat, lng], 15, { animate: false });
-    } else if (googleMap && lat !== undefined && lng !== undefined) {
-      googleMap.setZoom(15);
-      googleMap.panTo({ lat, lng });
+    const activeLeafletMap = leafletMapRef.current;
+    const activeGoogleMap = googleMapRef.current;
+    if (activeLeafletMap && lat !== undefined && lng !== undefined) {
+      activeLeafletMap.stop();
+      activeLeafletMap.setView([lat, lng], 15, { animate: false });
+    } else if (activeGoogleMap && lat !== undefined && lng !== undefined) {
+      activeGoogleMap.setZoom(15);
+      activeGoogleMap.panTo({ lat, lng });
     }
 
     setFlightState(null);
@@ -149,7 +161,9 @@ export default function Gta5FlightManager({ leafletMap, googleMap, onFlightStart
 
   useEffect(() => {
     const checkAndStart = () => {
-      if (!leafletMap && !googleMap) return;
+      const activeLeafletMap = leafletMapRef.current;
+      const activeGoogleMap = googleMapRef.current;
+      if (!activeLeafletMap && !activeGoogleMap) return;
       const stored = sessionStorage.getItem('trigger_gta5_map_zoom');
       if (stored) {
         try {
@@ -165,7 +179,9 @@ export default function Gta5FlightManager({ leafletMap, googleMap, onFlightStart
     checkAndStart();
 
     const handleTrigger = (e) => {
-      if (e.detail && (leafletMap || googleMap)) {
+      const activeLeafletMap = leafletMapRef.current;
+      const activeGoogleMap = googleMapRef.current;
+      if (e.detail && (activeLeafletMap || activeGoogleMap)) {
         executeFlight(e.detail);
       }
     };
