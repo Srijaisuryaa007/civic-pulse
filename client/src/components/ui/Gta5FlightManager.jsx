@@ -161,9 +161,7 @@ export default function Gta5FlightManager({ leafletMap, googleMap, onFlightStart
 
   useEffect(() => {
     const checkAndStart = () => {
-      const activeLeafletMap = leafletMapRef.current;
-      const activeGoogleMap = googleMapRef.current;
-      if (!activeLeafletMap && !activeGoogleMap) return;
+      if (!leafletMap && !googleMap) return;
       const stored = sessionStorage.getItem('trigger_gta5_map_zoom');
       if (stored) {
         try {
@@ -179,9 +177,7 @@ export default function Gta5FlightManager({ leafletMap, googleMap, onFlightStart
     checkAndStart();
 
     const handleTrigger = (e) => {
-      const activeLeafletMap = leafletMapRef.current;
-      const activeGoogleMap = googleMapRef.current;
-      if (e.detail && (activeLeafletMap || activeGoogleMap)) {
+      if (e.detail && (leafletMap || googleMap)) {
         executeFlight(e.detail);
       }
     };
