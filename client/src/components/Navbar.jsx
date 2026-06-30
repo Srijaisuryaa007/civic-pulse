@@ -223,7 +223,7 @@ export default function Navbar() {
             ) : (
               <Link
                 to="/login"
-                className="px-6 py-2.5 text-[13px] font-sans font-bold uppercase tracking-[0.12em] bg-[#1A1A1A] text-[#FFFFFF] hover:bg-[#D4AF37] hover:text-[#1A1A1A] rounded-full active:scale-95 transition-all duration-300 shadow-soft hover:shadow-soft-md"
+                className="px-6 py-2.5 text-[13px] font-sans font-bold uppercase tracking-[0.12em] bg-[#1A1A1A] text-[#FFFFFF] hover:bg-[#D4AF37] hover:text-[#1A1A1A] rounded-full active:scale-95 transition-all duration-300 shadow-soft hover:shadow-soft-md whitespace-nowrap"
               >
                 Sign In
               </Link>
