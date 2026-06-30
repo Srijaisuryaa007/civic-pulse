@@ -157,8 +157,10 @@ export default function Report() {
   };
 
   const processFile = (file) => {
-    if (!file.type.startsWith('image/')) {
-      triggerToast('Please upload an image file', 'error');
+    const isImage = file.type.startsWith('image/');
+    const isVideo = file.type.startsWith('video/');
+    if (!isImage && !isVideo) {
+      triggerToast('Please upload an image or video file', 'error');
       return;
     }
     
@@ -349,7 +351,11 @@ export default function Report() {
           >
             {imagePreview ? (
               <div className="relative w-full max-h-80 overflow-hidden flex justify-center bg-neutral-100 arch-image border border-stone shadow-soft">
-                <img src={imagePreview} alt="Issue preview" className="max-h-80 object-contain arch-image" />
+                {selectedFile?.type?.startsWith('video/') ? (
+                  <video src={imagePreview} controls className="max-h-80 w-full object-contain arch-image" />
+                ) : (
+                  <img src={imagePreview} alt="Issue preview" className="max-h-80 object-contain arch-image" />
+                )}
                 <button
                   type="button"
                   onClick={() => { setSelectedFile(null); setImagePreview(null); }}
@@ -370,10 +376,10 @@ export default function Report() {
                     Drag and drop file or{' '}
                     <label className="text-terracotta hover:underline cursor-pointer">
                       browse
-                      <input type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
+                      <input type="file" className="hidden" accept="image/*,video/*" onChange={handleFileChange} />
                     </label>
                   </p>
-                  <p className="text-[10px] text-neutral-400 font-mono mt-1.5 uppercase tracking-wider">PNG, JPG, WEBP formats only</p>
+                  <p className="text-[10px] text-neutral-400 font-mono mt-1.5 uppercase tracking-wider">Images or videos up to 25MB</p>
                 </div>
               </div>
             )}
@@ -658,7 +664,11 @@ export default function Report() {
             <div className="bg-paper p-4 rounded-[32px] border border-stone shadow-soft-md relative">
               <label className="block text-[10px] font-mono font-bold uppercase tracking-widest text-neutral-500 mb-2 ml-2">Evidence Graphic</label>
               <div className="aspect-video w-full overflow-hidden arch-image border border-stone relative bg-neutral-100 shadow-soft">
-                <img src={aiData.imageUrl} alt="Uploaded report" className="w-full h-full object-cover arch-image" />
+                {aiData.imageUrl?.includes('/video/upload') || selectedFile?.type?.startsWith('video/') ? (
+                  <video src={aiData.imageUrl} controls className="w-full h-full object-cover arch-image" />
+                ) : (
+                  <img src={aiData.imageUrl} alt="Uploaded report" className="w-full h-full object-cover arch-image" />
+                )}
                 <div className="absolute inset-0 halftone-placeholder pointer-events-none opacity-5" />
               </div>
               <div className="flex items-center gap-2 mt-3 text-[10px] font-mono uppercase tracking-wide text-neutral-500 ml-2">

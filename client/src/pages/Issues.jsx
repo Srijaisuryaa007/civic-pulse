@@ -7,11 +7,15 @@ import { IssueCard } from '../components/ui/IssueCard';
 import { SkeletonCard } from '../components/ui/SkeletonCard';
 import { StatusChip } from '../components/ui/StatusChip';
 import { CompassMappingLoader } from '../components/ui/CivicLoaders';
+import CivicReelCard from '../components/CivicReelCard';
 
 export default function Issues() {
-  const { issues, loading, error, refreshIssues, upvoteIssue } = useIssues();
+  const { issues, loading, error, refreshIssues, upvoteIssue, verifyIssue, addComment, triggerToast } = useIssues();
   const { user } = useAuth();
   const navigate = useNavigate();
+
+  // View state: 'list' or 'reels'
+  const [feedView, setFeedView] = useState('list');
 
   // Search & Filter state
   const [searchTerm, setSearchTerm] = useState('');
@@ -138,6 +142,24 @@ export default function Issues() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <h1 className="text-xl font-medium text-inverted tracking-tight">Active Issues</h1>
+            <div className="flex bg-[#EBE5DE]/30 p-1 rounded-full border border-border">
+              <button
+                onClick={() => setFeedView('list')}
+                className={`px-3.5 py-1.5 text-[10px] font-mono font-bold uppercase tracking-wider rounded-full transition-all cursor-pointer ${
+                  feedView === 'list' ? 'bg-[#1A1A1A] text-white shadow-soft' : 'text-[#6C6863] hover:text-[#1A1A1A]'
+                }`}
+              >
+                List
+              </button>
+              <button
+                onClick={() => setFeedView('reels')}
+                className={`px-3.5 py-1.5 text-[10px] font-mono font-bold uppercase tracking-wider rounded-full transition-all cursor-pointer ${
+                  feedView === 'reels' ? 'bg-[#1A1A1A] text-white shadow-soft' : 'text-[#6C6863] hover:text-[#1A1A1A]'
+                }`}
+              >
+                🎬 Reels
+              </button>
+            </div>
             <div className="h-6 w-px bg-border hidden md:block" />
             <div className="relative w-full md:w-64">
               <IconSearch size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
@@ -197,7 +219,24 @@ export default function Issues() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {feedView === 'reels' ? (
+          <div className="flex justify-center py-2">
+            <div className="w-full max-w-md h-[calc(100vh-14rem)] overflow-y-scroll snap-y snap-mandatory scrollbar-none flex flex-col gap-6 rounded-[32px]">
+              {filtered.map((issue) => (
+                <CivicReelCard 
+                  key={issue.id} 
+                  issue={issue} 
+                  user={user} 
+                  upvoteIssue={upvoteIssue}
+                  verifyIssue={verifyIssue}
+                  addComment={addComment}
+                  triggerToast={triggerToast}
+                />
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           
           {/* Main Feed: 2-col masonry */}
           <div className="lg:col-span-2">
@@ -326,6 +365,7 @@ export default function Issues() {
           </div>
 
         </div>
+        )}
       </div>
     </div>
   );
