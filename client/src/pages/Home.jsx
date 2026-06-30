@@ -3,13 +3,15 @@ import { Link } from 'react-router-dom';
 import MapView from '../components/MapView';
 import { useIssues } from '../context/IssueContext';
 import { useAuth } from '../context/AuthContext';
-import { Plus, Flame, CheckCircle2, Users, Map, HelpCircle, X, Leaf } from 'lucide-react';
+import { Plus, Flame, CheckCircle2, Users, Map, HelpCircle, X, Leaf, Globe } from 'lucide-react';
+import LocationSwitcherModal from '../components/ui/LocationSwitcherModal';
 
 export default function Home() {
   const { issues } = useIssues();
   const { user, showTutorial, dismissTutorial } = useAuth();
   const [activeCategory, setActiveCategory] = useState('all');
   const [showHeatmap, setShowHeatmap] = useState(false);
+  const [showLocationModal, setShowLocationModal] = useState(false);
   const [stats, setStats] = useState({
     resolved: 0,
     citizensHelped: 0,
@@ -60,9 +62,20 @@ export default function Home() {
       {/* 1. Header Stats Bar */}
       <div className="bg-[#F9F8F6] border-b border-[#EBE5DE] px-4 py-3 z-20 transition-all duration-300">
         <div className="mx-auto max-w-7xl flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-3">
             <span className="h-2 w-2 rounded-full bg-[#D4AF37] animate-pulse" />
-            <h2 className="text-[11px] font-sans font-semibold uppercase tracking-[0.15em] text-[#6C6863]">Hyperlocal Status</h2>
+            <h2 className="text-[11px] font-sans font-semibold uppercase tracking-[0.15em] text-[#6C6863] flex items-center gap-1.5">
+              <span>Hyperlocal Status:</span>
+              <span className="text-[#1A1A1A] font-bold font-mono text-[10px] normal-case bg-stone/20 px-2 py-0.5 rounded-full">
+                📍 {user?.city || 'San Francisco'}, {user?.country || 'United States'}
+              </span>
+            </h2>
+            <button
+              onClick={() => setShowLocationModal(true)}
+              className="px-2.5 py-0.5 border border-[#D4AF37] hover:bg-[#D4AF37] hover:text-[#1A1A1A] text-[#D4AF37] rounded-full transition-all text-[9px] font-mono uppercase font-bold shadow-soft"
+            >
+              Change Location
+            </button>
           </div>
           
           <div className="flex items-center gap-6 sm:gap-10 font-sans text-[11px] uppercase tracking-[0.15em] font-semibold text-[#6C6863]">
@@ -176,6 +189,11 @@ export default function Home() {
           )}
         </div>
       </div>
+
+      <LocationSwitcherModal 
+        isOpen={showLocationModal} 
+        onClose={() => setShowLocationModal(false)} 
+      />
     </div>
   );
 }

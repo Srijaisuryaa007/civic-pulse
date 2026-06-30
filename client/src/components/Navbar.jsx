@@ -131,16 +131,7 @@ export default function Navbar() {
 
           {/* Right Profile / Access actions */}
           <div className="flex items-center gap-3">
-            {/* 3D Satellite Flight Trigger */}
-            <button
-              data-tour="satellite-btn"
-              onClick={handleSatelliteClick}
-              title="GTA5 3D Satellite Zoom"
-              className="hidden sm:flex items-center gap-1.5 px-3.5 py-2 rounded-full border border-[#D4AF37]/50 bg-[#1A1A1A] text-[#D4AF37] hover:bg-[#D4AF37] hover:text-[#1A1A1A] transition-all font-mono text-[12px] uppercase font-bold shadow-soft"
-            >
-              <Compass className="h-3.5 w-3.5 animate-spin" style={{ animationDuration: '10s' }} />
-              <span>3D Satellite</span>
-            </button>
+
 
             {/* Interactive Tour Trigger */}
             <button
