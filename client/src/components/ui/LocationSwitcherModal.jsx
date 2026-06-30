@@ -35,10 +35,9 @@ export default function LocationSwitcherModal({ isOpen, onClose }) {
     }
   }, [user, isOpen]);
 
-  if (!isOpen) return null;
-
   // Debounced search query autocomplete fetcher (improves response time & limits API hits)
   useEffect(() => {
+    if (!isOpen) return;
     if (searchQuery.trim().length < 3) {
       setSuggestions([]);
       return;
@@ -64,7 +63,9 @@ export default function LocationSwitcherModal({ isOpen, onClose }) {
     }, 450); // 450ms debounce time
 
     return () => clearTimeout(timer);
-  }, [searchQuery]);
+  }, [searchQuery, isOpen]);
+
+  if (!isOpen) return null;
 
   const handleSearchChange = (val) => {
     setSearchQuery(val);
